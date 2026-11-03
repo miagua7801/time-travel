@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>결과 전송 시험</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f7f6f2; color: #222; margin: 0; padding: 24px; }
+  main { max-width: 420px; margin: 0 auto; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  label { display: block; margin: 12px 0 4px; font-size: 14px; }
+  select, input, button { font-size: 16px; padding: 8px; width: 100%; box-sizing: border-box; }
+  button { margin-top: 16px; background: #2f6fd6; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #f0a500; }
+  #msg { margin-top: 16px; font-size: 14px; min-height: 2em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>결과 전송 시험</h1>
+  <label for="cls">반</label>
+  <select id="cls"></select>
+  <label for="num">번호</label>
+  <input id="num" type="number" min="1" max="40" inputmode="numeric">
+  <label for="grp">모둠 이름 (10자 이내)</label>
+  <input id="grp" maxlength="10">
+  <button id="send">보내기</button>
+  <div id="msg" role="status"></div>
+</main>
+<script>
+  // Apps Script 배포 후 받은 웹 앱 URL(…/exec)을 붙여 넣을 것
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwIrdjIUs_jWzzVd2MFPKi_aEmS5M4lyrgRSvZ8Il405bPKgGE7B_GtZBcLaO70vmqD/exec';
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6']; // Code.gs의 목록과 같게
+
+  const cls = document.getElementById('cls');
+  CLASSES.forEach(c => { const o = document.createElement('option'); o.value = o.textContent = c; cls.appendChild(o); });
+  const msg = document.getElementById('msg');
+
+  document.getElementById('send').addEventListener('click', async () => {
+    const number = parseInt(document.getElementById('num').value, 10);
+    const group = document.getElementById('grp').value.trim();
+    if (!(number >= 1 && number <= 40)) { msg.textContent = '번호를 1~40 사이로 입력하세요.'; return; }
+    msg.textContent = '보내는 중…';
+    try {
+      await fetch(ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          class: cls.value, number, group,
+          period: 'test',
+          payload: '전송 시험 ' + new Date().toLocaleString('ko-KR')
+        })
+      });
+      msg.textContent = '보냈습니다. 수신 스프레드시트의 ' + cls.value + ' 시트에 ' + number + '번 줄이 생겼는지 확인하세요.';
+    } catch (e) {
+      msg.textContent = '전송 실패: 학교망에서 막혔을 수 있습니다. (' + e.message + ')';
+    }
+  });
+</script>
+</body>
+</html>
