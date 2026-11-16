@@ -1,27 +1,32 @@
-// 교사가 바꾸는 설정은 이 파일 한 곳에만 둔다.
+// 교사가 바꾸는 설정은 이 파일 한 곳에만 둔다. (docs/ARCHITECTURE.md 4.4)
 
-// 담당 반 — Apps Script(Code.gs)의 ALLOWED_CLASSES와 반드시 같게
+// 담당 반. 결과 수신 Apps Script의 반 목록과 같게
 export const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6'];
 
-// 결과 수신 Apps Script 웹 앱 URL (…/exec). 시험 때 쓴 URL과 같은 배포를 쓴다.
-export const ENDPOINT = '여기에_웹앱_URL';
-
-// 전송이 끝내 실패할 때 결과 코드를 붙여 넣을 Google 설문지 주소 (학교 계정으로 만든 것)
-export const FALLBACK_FORM_URL = '여기에_설문지_URL';
-
-// 녹음 파일 확장자 (assets/audio/ 안의 실제 파일에 맞출 것: 'mp3', 'm4a', 'wav' 등)
-export const AUDIO_EXT = 'mp3';
-
-// 효과음 기본값 — 꺼짐. 교사가 화면 설정에서 켤 수 있다.
-export const SFX_DEFAULT_ON = false;
-
-// 단계별 권장 시간(분). 화면에 표시만 하고 막지는 않는다. 진행은 교사가 말로 전환한다.
-export const STAGE_MINUTES = { main: 5, meeting: 3, party: 2, sign: 1, examGate: 1 };
-
-// 모둠 이름 최대 글자 수, 번호 범위
-export const GROUP_MAX = 10;
+// 번호 범위
 export const NUMBER_MIN = 1;
 export const NUMBER_MAX = 40;
 
-// 기기 저장 키 접두사 (같은 크롬북을 여러 학생이 쓸 수 있으므로 반·번호별로 저장)
-export const STORAGE_PREFIX = 'tt8:v1:';
+// 결과 수신 Apps Script 웹 앱 주소(…/exec). 비워 두면 전송 없이 게임만 동작한다.
+export const RESULT_URL = '';
+
+// 학교 계정 입구 주소(…/exec). 교사 안내용이며 학생 화면에는 쓰지 않는다.
+export const GATE_URL = '';
+
+// 장면 5 암호 해시. 암호 낱말은 여기에 적지 않는다.
+// 만들기: node tools/code-hash.mjs 2-1 낱말 2-2 낱말 …   (또는 --storyboard)
+export const CODE_HASHES = {
+  '2-1': '4a8963f8651e92019663d0b46c2496bf400321c83026720e99890a04ea6aade0',
+  '2-2': '0eea8605fe0200eb24211ac59f9074f2110166f618b9a77ee8c715294888e307',
+  '2-3': '387daf9aec185b15246db6a598c5ca0c6c80b25ec4cf0210ce266c48e72fd80b',
+  '2-4': 'aaefdd5a9017eb40b7ff47d0b33e6da1ee878ea804217deb87f24c7820cffbec',
+  '2-5': '6520f4f68c88188a3ada433bf08f1f213d29bee93f96c052e08dadbba0292dc8',
+  '2-6': '952c9a8a7ff0a4196553fce5e02ccf07c363d8ac4e6fc12489eedf7eca986d73',
+};
+
+// 도입 영상 음량(0~1)과, 영상이 시작되지 않을 때 기다리는 시간(밀리초)
+export const VIDEO_VOLUME = 0.6;
+export const VIDEO_WAIT_MS = 3000;
+
+// 단서 수첩 한도
+export const NOTEBOOK_LIMIT = 5;

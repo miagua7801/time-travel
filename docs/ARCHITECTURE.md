@@ -35,6 +35,7 @@ js/
   screens/
     s0-access.js  s1-intro.js  s2-title.js  s3-report.js  s4-map.js  s5-scene.js
     s6-continued.js  s7-recap.js  s8-code.js  s9-sign.js  s10-certificate.js  s11-rewind.js
+    soon.js                아직 만들지 않은 화면의 "준비 중" 자리 (개발 중에만)
 assets/
   img/cards/card_*.webp    장면 카드 6장 (장면 그림 겸 카드)
   img/mood/mood_*.webp     관찰 일지 카드 6장
@@ -52,7 +53,7 @@ tools/
   code-hash.mjs            장면 5 암호 → config.js에 넣을 해시
   lib.mjs                  위 도구들이 함께 쓰는 것 (평문 읽기, 본문 자료 만들기·점검, 잠그기·풀기)
   vault-test.html          잠금 시험 페이지. 교사 컴퓨터에만 둠 (커밋 안 함). localhost에서만 동작하고 개수와 결과만 보임
-  shot.mjs                 Playwright 1366×768 캡처 (tools/shots/, 커밋 안 함)
+  shot.mjs                 Playwright 1366×768 캡처와 화면 점검 (tools/shots/). private/vault.key를 읽으므로 커밋 안 함
 docs/ARCHITECTURE.md
 private/                   교사 컴퓨터에만. 커밋 안 함
   스토리보드.md  기획안.md  audio_map.json  audio_map.csv  word_gloss.csv
