@@ -68,6 +68,7 @@ export const COPY = {
 
   // ---------- S4 길 지도 ----------
   's4.locked': { voice: 'hq', text: '다음 접속까지 잠금.' },
+  'notebook.name': { voice: 'label', text: '단서 수첩' },
 
   // ---------- S5 장면 ----------
   'scene.1.name': { voice: 'label', text: '장면 1 · 사무실' },
