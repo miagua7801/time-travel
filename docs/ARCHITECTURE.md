@@ -50,6 +50,8 @@ tools/
   check-content.mjs        평문 데이터 점검 (잠그기 전에 실행)
   check-repo.mjs           커밋 전 점검: 평문 본문·mp3·열쇠·암호가 저장소에 없는지
   code-hash.mjs            장면 5 암호 → config.js에 넣을 해시
+  lib.mjs                  위 도구들이 함께 쓰는 것 (평문 읽기, 본문 자료 만들기·점검, 잠그기·풀기)
+  vault-test.html          잠금 시험 페이지. 교사 컴퓨터에만 둠 (커밋 안 함). localhost에서만 동작하고 개수와 결과만 보임
   shot.mjs                 Playwright 1366×768 캡처 (tools/shots/, 커밋 안 함)
 docs/ARCHITECTURE.md
 private/                   교사 컴퓨터에만. 커밋 안 함
@@ -105,7 +107,7 @@ private/                   교사 컴퓨터에만. 커밋 안 함
         { "d": 1, "title": true, "key": false, "chunks": [ { "id": "R_1_1", "who": "narrator", "text": "…", "sec": 3.13 } ] },
         { "d": 2, "key": false, "chunks": [ { "id": "R_1_2", "who": "narrator", "text": "…", "sec": 3.63 } ] }
       ],
-      "vocab": [ { "word": "…", "meaning": "…", "spans": [ { "d": 4, "text": "…" } ] } ]
+      "vocab": [ { "word": "…", "meaning": "…", "spans": [ { "d": 4, "c": 0, "s": 37, "e": 46 } ] } ]   // 줄 d의 c번째 덩어리 글에서 s~e 글자
     }
   },
   "checks": { … }, "cards": { … }, "sign": { … },
@@ -378,6 +380,9 @@ private/Reading, news ─┘                                              (priva
 - `check-content.mjs`가 보는 것: 덩어리 111개와 파일이 모두 있는지, 반복 파일이 섞이지 않았는지, 핵심 문장 16개·단어 30개·확인 문제 5개·카드 6장·간판 낱말 7개가 본문과 맞는지, 단어마다 실린 장면에서 한 번 이상 찾아지는지, 근거 줄과 카드 뒷면 문장이 실제 본문 안에 있는지.
 - `check-repo.mjs`가 보는 것: 커밋 대상에 `.mp3`, `private/`, 열쇠 글자, 본문 문장(평문 본문에서 뽑은 문장이 저장소 파일에 그대로 있는지), 장면 5 암호 낱말이 없는지.
 - 도구는 열쇠와 암호를 화면에 찍지 않는다.
+- `private/`의 자료를 고친 뒤에는 `check-content.mjs` → `lock.mjs`를 다시 실행하면 된다. 내용이 바뀐 잠긴 파일만 새로 쓰이고 판 번호가 바뀐다.
+- 확인 문제 선지와 카드 뒷면의 곧은 따옴표(')는 잠글 때 본문과 같은 둥근 따옴표(’)로 바꾼다.
+- 잠금 시험: 로컬 서버에서 `tools/vault-test.html`을 연다. 이 페이지는 `private/vault.key`를 읽으므로 `.gitignore`에 넣어 커밋하지 않는다. 열쇠가 없을 때·틀릴 때 풀리지 않는지, 바른 열쇠로 `story.bin`과 음성 묶음 6개가 풀리는지, 주소창에서 열쇠가 지워지는지를 본다.
 
 ### 5.4 푸는 흐름 (학생 기기)
 
