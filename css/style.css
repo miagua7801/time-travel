@@ -1,0 +1,543 @@
+/* 디자인 토큰: 색·간격·모서리는 여기서만 정한다. 장식 효과(그림자, 그라데이션, 기울기 등) 금지. */
+:root {
+  --bg: #ffffff;
+  --surface: #f1f3f5;
+  --text: #111827;
+  --muted: #4b5563;
+  --border: #6b7280;
+  --accent: #1d4ed8;
+  --on-accent: #ffffff;
+
+  --rec: #1d4ed8;
+  --ana: #15803d;
+  --tra: #b91c1c;
+  --the: #facc15;
+  --on-job: #ffffff;      /* rec·ana·tra 바탕 위 글자 */
+  --on-the: #111827;      /* 노랑 바탕 위 글자 */
+
+  --ok: #15803d;
+  --bad: #b91c1c;
+  --focus: #c2410c;
+
+  --s1: 8px;
+  --s2: 16px;
+  --s3: 24px;
+  --s4: 32px;
+  --s5: 40px;
+  --radius: 8px;
+
+  --font: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+/* 포커스 테두리는 항상 보인다 */
+:focus-visible,
+[tabindex="-1"]:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ---------- 공통 머리 영역 ---------- */
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s1) var(--s3);
+  border-bottom: 2px solid var(--border);
+  min-height: 56px;
+}
+
+.progress {
+  display: flex;
+  flex: 1;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress li {
+  flex: 1;
+  padding: 4px var(--s1);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 18px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.progress li.done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.progress li.now {
+  border-color: var(--text);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ---------- 화면 ---------- */
+#screen {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--s2) var(--s3);
+}
+
+h1.line {
+  margin: 0 0 var(--s3);
+  font-size: 24px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.line-box {
+  margin: 0 0 var(--s2);
+  padding: var(--s2);
+  border-left: 8px solid var(--accent);
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-size: 20px;
+}
+
+/* ---------- 버튼·입력 ---------- */
+button,
+select,
+input {
+  font: inherit;
+  color: var(--text);
+}
+
+button {
+  min-height: 48px;
+  padding: var(--s1) var(--s3);
+  border: 2px solid var(--text);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+button[aria-pressed="true"]:not(.job-card) {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--s2);
+}
+
+.field label {
+  font-weight: 700;
+}
+
+.field select,
+.field input {
+  min-height: 48px;
+  padding: var(--s1) var(--s2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  max-width: 320px;
+}
+
+.field .hint {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.field .err {
+  color: var(--bad);
+  font-weight: 700;
+}
+
+/* ---------- 직업 카드 ---------- */
+.jobs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s2);
+  margin: var(--s2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  width: 100%;
+  height: 100%;
+  padding: var(--s2);
+  border: 2px solid var(--border);
+  border-top-width: 10px;
+  text-align: center;
+}
+
+.job-card[data-job="rec"] { border-top-color: var(--rec); }
+.job-card[data-job="ana"] { border-top-color: var(--ana); }
+.job-card[data-job="tra"] { border-top-color: var(--tra); }
+.job-card[data-job="the"] { border-top-color: var(--the); }
+
+.job-card[aria-pressed="true"] {
+  border-color: var(--text);
+  border-width: 4px;
+  border-top-width: 10px;
+  font-weight: 700;
+}
+
+.job-art {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.job-dot {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid var(--text);
+}
+
+.job-dot[data-job="rec"] { background: var(--rec); }
+.job-dot[data-job="ana"] { background: var(--ana); }
+.job-dot[data-job="tra"] { background: var(--tra); }
+.job-dot[data-job="the"] { background: var(--the); }
+
+.job-name { font-size: 20px; font-weight: 700; }
+.job-role { font-size: 18px; color: var(--muted); }
+.job-mark { font-size: 18px; min-height: 27px; font-weight: 700; }
+
+[hidden] { display: none !important; }
+button:disabled { cursor: default; }
+
+/* ---------- 챕터: 진행 길 (2-2-⑮) ---------- */
+.trail {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s3);
+  margin: 0 0 var(--s1);
+  padding-left: var(--s2);
+  border-left: 8px solid var(--border);
+}
+.trail[data-job="rec"] { border-left-color: var(--rec); }
+.trail[data-job="ana"] { border-left-color: var(--ana); }
+.trail[data-job="tra"] { border-left-color: var(--tra); }
+.trail[data-job="the"] { border-left-color: var(--the); }
+
+.path { position: relative; flex: 1; padding-top: 58px; }
+.path-cells {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cell .dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+}
+.cell.done { color: var(--text); }
+.cell.done .dot { background: var(--text); border-color: var(--text); color: var(--bg); }
+.cell.now { border-color: var(--text); color: var(--text); font-weight: 700; }
+.cell.now .dot { border-width: 4px; border-color: var(--text); }
+
+/* 내 직업 그림: 지금 칸 위에 선다. 칸 사이 이동은 미끄러지듯 0.5초(그림 자체는 움직이지 않음) */
+.avatar {
+  --pos: 0;
+  position: absolute;
+  top: 0;
+  left: calc((100% / 6) * var(--pos) + (100% / 12) - 28px);
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 56px;
+}
+/* 마지막 칸에서는 이름을 그림 왼쪽에 (오른쪽 정보 칸을 가리지 않게) */
+.avatar.flip { flex-direction: row-reverse; transform: translateX(calc(-100% + 56px)); }
+.avatar-art { width: 56px; height: 56px; object-fit: contain; }
+/* 걷는 그림: 가로 8칸 그림을 0.5초 동안 한 칸씩 넘긴다. 옮겨 가는 동안에만 서 있는 그림 대신 보인다. */
+.avatar-walk {
+  display: none;
+  width: 56px;
+  height: 56px;
+  background-repeat: no-repeat;
+  background-size: 448px 56px;
+}
+.avatar.walking .avatar-art { display: none; }
+.avatar.walking .avatar-walk { display: block; }
+.avatar .job-dot { width: 40px; height: 40px; }
+.avatar-name { font-size: 18px; font-weight: 700; white-space: nowrap; }
+
+.trail-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.trail-info b { color: var(--text); }
+.card-count { color: var(--text); font-weight: 700; }
+
+/* 직업 이름 표시: 굵게 + 그 직업 색 바탕 */
+.job-tag {
+  display: inline-block;
+  padding: 0 var(--s1);
+  border-radius: var(--radius);
+  color: var(--on-job);
+}
+.job-tag[data-job="rec"] { background: var(--rec); }
+.job-tag[data-job="ana"] { background: var(--ana); }
+.job-tag[data-job="tra"] { background: var(--tra); }
+.job-tag[data-job="the"] { background: var(--the); color: var(--on-the); }
+.job-mini { width: 40px; height: 40px; object-fit: contain; vertical-align: middle; margin: 0 4px; }
+
+.rule-band {
+  margin: 0 0 var(--s1);
+  padding: 4px var(--s2);
+  border: 2px solid var(--text);
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
+/* ---------- NPC 대사 ---------- */
+.npc-intro { display: flex; gap: var(--s3); align-items: center; }
+.npc-art { width: 200px; height: 200px; object-fit: contain; }
+.npc-who { font-weight: 700; color: var(--muted); margin: 0; }
+.npc-line { font-size: 28px; }
+
+.npc-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0 0 var(--s1);
+  padding: 2px var(--s2);
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+.npc-mini { width: 40px; height: 40px; object-fit: contain; }
+.npc-text { flex: 1; font-size: 20px; }
+.npc-bar .audio-btn { min-height: 40px; }
+
+/* ---------- 문구 상자 ---------- */
+.line-box.travis { display: flex; align-items: center; gap: var(--s2); border-left-color: var(--text); }
+.face { width: 56px; height: 56px; object-fit: contain; flex: none; }
+.narration { margin: 0 0 var(--s2); font-size: 20px; font-weight: 700; }
+.mark { font-weight: 700; margin-right: var(--s1); }
+.line-box .audio-btn { margin-left: auto; }
+
+/* ---------- 퀘스트 지시문 (공통): 작은 색 배지 + 아래 줄 지시 문장 ---------- */
+.instruction {
+  margin: 0 0 var(--s2);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.instruction .badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 0 var(--s1);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.instruction .instr-text { display: block; }
+.instruction .instr-text:lang(en) { font-size: 20px; } /* 영어 발문은 20px 이상 */
+
+/* ---------- 문항 ---------- */
+/* 파티 퀘스트: 물어볼 사람 (2-2-⑭) */
+.ask-who { display: flex; align-items: center; gap: var(--s2); margin: 0 0 var(--s1); font-size: 24px; }
+.ask-label { font-weight: 700; }
+.ask-who .job-art, .ask-who .job-dot { width: 72px; height: 72px; }
+
+/* 변환 단추 '한국어'/'영어' (2-2-③) */
+.instr-row { display: flex; align-items: flex-start; gap: var(--s2); }
+.instr-row .instruction { flex: 1; }
+.lang-toggle { display: flex; gap: var(--s1); flex: none; }
+.lang-toggle button { min-height: 44px; padding: 4px var(--s2); }
+.prompt { margin: 0 0 var(--s2); }
+
+.options, .cands, .links, .notebook {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0 0 var(--s2);
+  padding: 0;
+  list-style: none;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  text-align: left;
+  border-color: var(--border);
+}
+.option .num {
+  flex: none;
+  min-width: 32px;
+  font-weight: 700;
+  text-align: center;
+}
+.opt-text { font-size: 20px; }
+.option.dim { color: var(--muted); border-style: dashed; }
+.option.right { border-color: var(--ok); border-width: 4px; color: var(--text); }
+[aria-pressed="true"] .cand-page { color: inherit; }
+
+.sentence { margin: 0 0 var(--s2); font-size: 24px; line-height: 2; }
+input.blank {
+  margin: 0 var(--s1);
+  padding: 2px var(--s1);
+  min-height: 44px;
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 24px;
+}
+input.blank.wrong { border-color: var(--bad); }
+input.blank.right { border-color: var(--ok); }
+
+.btn-row.tight { margin-top: 0; align-items: center; }
+.words { display: flex; gap: var(--s1); margin: 0; padding: 0; list-style: none; }
+.word { font-size: 20px; }
+
+.feedback:empty { display: none; }
+.feedback { margin-top: var(--s1); }
+.feedback .line-box, .feedback .narration { margin-bottom: var(--s1); }
+.feedback .line-box.travis { padding: var(--s1) var(--s2); }
+/* 정답 뒤: 문구는 왼쪽, 카드는 오른쪽 — 1366×768에서 스크롤 없이 */
+.feedback:has(.card) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--s2);
+  align-items: start;
+}
+.feedback:has(.card) > :not(.card) { grid-column: 1; }
+.feedback > .card { grid-column: 2; grid-row: 1 / span 3; }
+.item > .btn-row:last-child { margin-top: var(--s1); }
+/* ★ 추가 지령은 한 줄로 (배지 + 문장) */
+.item > p.instruction { margin-bottom: var(--s1); }
+.item > p.instruction .instr-text { display: inline; margin-left: var(--s1); }
+.item .instruction { margin-bottom: 12px; }
+.item .options { margin-bottom: var(--s1); }
+
+/* 단서 수첩 */
+.cand-top { display: flex; gap: var(--s1); align-items: stretch; }
+.cand-top .option { flex: 1; }
+.cand-page { color: var(--muted); margin-left: var(--s1); white-space: nowrap; }
+.chips { display: flex; gap: var(--s1); margin: 4px 0 0 48px; }
+.chip { min-height: 40px; padding: 4px var(--s2); }
+
+/* 단서 잇기 */
+.link-row { display: grid; grid-template-columns: 32px 1fr 340px; align-items: center; gap: var(--s2); }
+.link-row select { min-height: 48px; border: 2px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 0 var(--s1); }
+.link-row .num { font-weight: 700; text-align: center; }
+.score { font-size: 24px; font-weight: 700; margin: 0; }
+
+/* ---------- 증거 카드 ---------- */
+.card {
+  padding: var(--s2);
+  border: 2px solid var(--text);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.card-text { margin: 0; font-size: 20px; font-weight: 700; }
+.card-meta { display: flex; align-items: center; gap: var(--s2); margin-top: 4px; color: var(--muted); }
+.card-meta .audio-btn { min-height: 40px; }
+.tags { display: flex; gap: var(--s1); margin-bottom: 4px; }
+.tag {
+  padding: 0 var(--s1);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 18px;
+  color: var(--text);
+}
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s1); }
+.cards .card { padding: var(--s1) var(--s2); }
+
+/* 파티 회의 단서 수첩 (크게) */
+.clue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--s2);
+  padding: 4px var(--s2);
+  border: 2px solid var(--tra);
+  border-radius: var(--radius);
+}
+.clue-text { flex: 1 1 400px; font-size: 20px; font-weight: 700; }
+.clue .audio-btn, .clue .chip { min-height: 40px; }
+
+/* ---------- 간판 ---------- */
+.sign {
+  margin: 0 0 var(--s3);
+  padding: var(--s3);
+  border: 4px solid var(--text);
+  border-radius: var(--radius);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.sign-word { padding: 0 4px; border-radius: 4px; }
+.sign-word.target { outline: 3px dashed var(--accent); outline-offset: 2px; }
+.spell { min-width: 160px; font-size: 24px; font-weight: 700; }
+.key-sentence { margin: 0 0 var(--s2); font-size: 24px; font-weight: 700; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .progress li { transition: background-color 0.3s; }
+  .card.enter { animation: card-rise 0.3s ease-out; }
+  .sign-word.fixed { animation: sign-swap 0.6s ease-out; }
+  .avatar { transition: left 0.5s linear; }
+  .avatar.walking .avatar-walk { animation: avatar-walk 0.5s steps(8) both; }
+}
+@keyframes card-rise { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes avatar-walk { from { background-position: 0 0; } to { background-position: -448px 0; } }
+@keyframes sign-swap { from { opacity: 0; color: var(--accent); } to { opacity: 1; } }
