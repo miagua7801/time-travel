@@ -10,7 +10,10 @@ export function makeCard(n, flipped = false) {
   const story = getStory();
   const back = story && story.cards && story.cards[String(n)] ? story.cards[String(n)].back : '';
   const front = el('span', { className: 'card-face card-front' }, img(`assets/img/cards/${scene.img}.webp`, '', line(`card.${scene.card}`)));
-  const rear = el('span', { className: 'card-face card-back', lang: 'en', textContent: back });
+  // 뒷면: 앞면 그림을 작게 + 핵심 문장
+  const rear = el('span', { className: 'card-face card-back' },
+    img(`assets/img/cards/${scene.img}.webp`, 'card-thumb', ''),
+    el('span', { className: 'card-back-text', lang: 'en', textContent: back }));
   const card = el('button', { type: 'button', className: 'card' }, front, rear);
   const set = (on) => {
     card.classList.toggle('flipped', on);

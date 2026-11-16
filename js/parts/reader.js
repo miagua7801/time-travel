@@ -15,6 +15,7 @@ export function makeReader(scene, opts) {
   const body = el('div', { className: 'reader-body' });
   const rows = new Map(); // d → { row, play, star }
   let openGloss = null;
+  let picking = null; // 문장 고르기 중이면 고른 줄을 받을 함수
 
   const closeGloss = () => {
     if (!openGloss) return;
@@ -79,7 +80,7 @@ export function makeReader(scene, opts) {
     text.addEventListener('click', hear);
 
     let star = null;
-    if (opts.stars) {
+    if (opts.stars && !ln.title) { // 제목 줄에는 ☆를 붙이지 않는다
       star = el('button', { type: 'button', className: 'clue' });
       star.setAttribute('aria-labelledby', id);
       const paint = () => {
@@ -88,6 +89,8 @@ export function makeReader(scene, opts) {
         star.setAttribute('aria-pressed', String(on));
       };
       star.addEventListener('click', () => {
+        // 예측 자리에서 문장을 고르는 중이면 수첩에 담지 않고 그 줄을 고른다
+        if (picking) { picking(ln.d); return; }
         const r = opts.onStar(ln.d);
         paint();
         showNote(r === 'full' ? 's11.full' : r === 'on' ? 's11.added' : null);
@@ -155,6 +158,26 @@ export function makeReader(scene, opts) {
       const r = rows.get(d);
       if (!r) return;
       r.row.classList.add('evidence');
+      r.row.scrollIntoView({ block: 'nearest' });
+    },
+    // 관찰 일지를 고른 뒤 그 줄이 잠깐 빛난다 (1초)
+    flash(d) {
+      const r = rows.get(d);
+      if (!r) return;
+      r.row.classList.add('flash');
+      r.row.scrollIntoView({ block: 'nearest' });
+      setTimeout(() => r.row.classList.remove('flash'), 1000);
+    },
+    // 문장 고르기: fn이 있으면 ☆가 fn(d)를 부른다. null이면 끝.
+    setPicking(fn) {
+      picking = fn;
+      body.classList.toggle('picking', Boolean(fn));
+    },
+    // 예측 자리에서 고른 줄 표시
+    markPicked(d) {
+      const r = rows.get(d);
+      if (!r) return;
+      r.row.classList.add('picked');
       r.row.scrollIntoView({ block: 'nearest' });
     },
     setSound(ok) {

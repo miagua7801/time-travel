@@ -1,19 +1,20 @@
 // S5 장면 화면 (스토리보드 3·4장, docs/ARCHITECTURE.md 3.4)
 // 단계: open(도입 3초) → read(읽기·듣기) → ask(묻기) → done(요약·카드·다음 장면). 마친 장면은 다시 보기.
-// 이 단계에서는 장면 1만 연다. 예측·관찰 일지·예측 되돌려주기는 그 장면을 만드는 단계에서 더한다.
+// 묻기: 확인(c) · 예측(p, 두 번째 여행은 문장 고르기) · 관찰 일지(m). 장면 3·5·6은 열릴 때 Travis 한 줄이 먼저 나온다.
 import { el, say, button, img, later, onLeave } from '../ui.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getScene, getStory } from '../content.js';
 import { loadSceneAudio, dropSceneAudio, play, stop, hasSound } from '../player.js';
 import { queueResult } from '../send.js';
-import { SCENES } from '../../data/scenes.js';
+import { SCENES, MOODS } from '../../data/scenes.js';
 import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS } from '../../data/config.js';
 import { makeReader } from '../parts/reader.js';
-import { checkAsk, checkReview, doneView, reviewView } from '../parts/ask.js';
+import { signBox, signText } from '../parts/sign.js';
+import { checkAsk, checkReview, predictAsk, predictReview, moodAsk, moodReview, pickAsk, pickReview, doneView, reviewView } from '../parts/ask.js';
 import { renderSoon } from './soon.js';
 
-const READY = new Set([1]); // 완성된 장면
+const READY = new Set([1, 2, 3, 4, 5, 6]); // 완성된 장면
 const INTRO_MS = 3000;
 
 export function renderScene(root, { go, app, opts, name }) {
@@ -42,6 +43,13 @@ export function renderScene(root, { go, app, opts, name }) {
 
   // ----- 장면 그림 + TV 단추 + 도입 문구 -----
   const pic = el('figure', { className: 'scene-pic media' }, img(`assets/img/cards/${scene.img}.webp`, 'scene-img', line(`card.${scene.card}`)));
+  // 빈 간판 자리에 올바른 간판 문구를 얹어 쓴다. 같은 문장이 본문에 있으므로 화면 읽기에서는 뺀다.
+  if (scene.sign) {
+    const sign = signBox(signText());
+    sign.setAttribute('aria-hidden', 'true');
+    pic.classList.add('sign-host');
+    pic.append(sign);
+  }
   let tv = null;
   if (scene.tv) {
     tv = el('button', { type: 'button', className: 'tv', textContent: 'TV' });
@@ -54,11 +62,21 @@ export function renderScene(root, { go, app, opts, name }) {
     pic.append(tv);
   }
   if (!replay) {
-    const intro = say(`scene.${n}.intro`);
-    intro.classList.add('intro-line');
-    intro.setAttribute('role', 'status');
-    pic.append(intro);
-    later(INTRO_MS, () => intro.remove());
+    // 여는 문구: (장면 3·5·6) Travis 한 줄 3초 → 내레이션 도입 3초. 그림 위에 나타났다 사라진다.
+    const lines = [];
+    if (scene.echo) {
+      if (rec.trip === 2) lines.push(say('trip2.read'));
+      else if (rec.predict[scene.echo]) lines.push(say('echo.predict', { pick: line(`${scene.echo}.${rec.predict[scene.echo]}`) }));
+    }
+    lines.push(say(`scene.${n}.intro`));
+    const showLine = (i) => {
+      const node = lines[i];
+      node.classList.add('intro-line');
+      node.setAttribute('role', 'status');
+      pic.append(node);
+      later(INTRO_MS, () => { node.remove(); if (i + 1 < lines.length) showLine(i + 1); });
+    };
+    showLine(0);
   }
 
   // ----- 본문 칸 -----
@@ -131,6 +149,16 @@ export function renderScene(root, { go, app, opts, name }) {
   readDone.disabled = true;
   if (!replay) reader.el.append(el('div', { className: 'reader-foot' }, readDone));
 
+  // 이 장면의 묻기 순서. 두 번째 여행의 장면 4는 끝에 예측 ②(문장 고르기)가 붙는다.
+  const asks = [...scene.asks];
+  if (n === 4 && rec.trip === 2) asks.push('p2');
+  const answered = (a) => {
+    if (a[0] === 'c') return Boolean(rec.checks[a]);
+    if (a[0] === 'm') return Boolean(rec.mood[a]);
+    return rec.trip === 2 ? a in rec.picks : Boolean(rec.predict[a]);
+  };
+  const textOf = (d) => { const ln = data.lines.find((x) => x.d === d); return ln ? ln.chunks.map((c) => c.text).join(' ') : ''; };
+
   const star = scene.star ? {
     id: scene.star,
     values: scene.star === 's2' && story.quotes ? { quote: story.quotes.star2 } : {},
@@ -160,17 +188,51 @@ export function renderScene(root, { go, app, opts, name }) {
   // 아직 답하지 않은 묻기를 차례로. 이미 답한 묻기는 다시 묻지 않는다.
   function nextAsk() {
     liveAsk = null;
-    const id = scene.asks.find((a) => a[0] === 'c' && !rec.checks[a]);
+    reader.setPicking(null);
+    const id = asks.find((a) => !answered(a));
     if (!id) { finish(); return; }
-    const ask = checkAsk(id, story.checks[id], {
-      onFirst(pick, right) {
-        rec.checks[id] = { first: right, pick };
-        saveRecord(rec);
-      },
-      onEvidence: (d) => reader.underline(d),
-      onDone: () => { if (alive) nextAsk(); },
-    });
+    const onDone = () => { if (alive) nextAsk(); };
+    let ask;
+    if (id[0] === 'c') {
+      ask = checkAsk(id, story.checks[id], {
+        onFirst(pick, right) {
+          rec.checks[id] = { first: right, pick };
+          saveRecord(rec);
+        },
+        onEvidence: (d) => reader.underline(d),
+        onDone,
+      });
+    } else if (id[0] === 'm') {
+      ask = moodAsk(id, MOODS[id], {
+        onPick(key) {
+          rec.mood[id] = key;
+          saveRecord(rec);
+          reader.flash(MOODS[id].flash);
+        },
+        onDone,
+      });
+    } else if (rec.trip === 2) {
+      ask = pickAsk(id, {
+        startPicking: (fn) => reader.setPicking(fn),
+        stopPicking(d) { reader.setPicking(null); if (d !== null) reader.markPicked(d); },
+        textOf,
+        onSave(d, why) {
+          rec.picks[id] = { d, why };
+          saveRecord(rec);
+        },
+        onDone,
+      });
+    } else {
+      ask = predictAsk(id, {
+        onPick(key) {
+          rec.predict[id] = key;
+          saveRecord(rec);
+        },
+        onDone,
+      });
+    }
     liveAsk = ask;
+    box.dataset.ask = id;
     show(ask, 'ask');
   }
 
@@ -200,9 +262,13 @@ export function renderScene(root, { go, app, opts, name }) {
   root.append(box);
 
   if (replay) {
-    const reviews = rec.flags.from5 ? [] : scene.asks
-      .filter((a) => a[0] === 'c' && rec.checks[a])
-      .map((a) => checkReview(a, story.checks[a], rec.checks[a]));
+    // "장면 5부터"로 온 학생의 장면 1~4에는 고른 답이 없다
+    const reviews = asks.filter(answered).map((a) => {
+      if (a[0] === 'c') return checkReview(a, story.checks[a], rec.checks[a]);
+      if (a[0] === 'm') return moodReview(a, MOODS[a], rec.mood[a]);
+      if (rec.trip === 2) { if (rec.picks[a].d !== null) reader.markPicked(rec.picks[a].d); return pickReview(rec.picks[a], textOf); }
+      return predictReview(a, rec.predict[a]);
+    });
     panel.hidden = false;
     panel.replaceChildren(reviewView(reviews, { onMap: () => go('s4'), star }).el);
     box.dataset.phase = 'replay';

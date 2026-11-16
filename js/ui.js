@@ -40,8 +40,13 @@ export function img(src, className = '', alt = '') {
 }
 
 export function charImg(name, className) {
-  return img(`assets/characters/${name}.png`, className, '');
+  const node = img(`assets/characters/${name}.png`, className, '');
+  node.decoding = 'sync'; // 문구보다 얼굴이 늦게 그려지지 않게
+  return node;
 }
+
+// 묻기 칸의 Travis 얼굴을 미리 받아 둔다
+try { new Image().src = 'assets/characters/travis_basic.png'; } catch (e) { /* 미리 받기 실패는 무시 */ }
 
 // 움직임 줄이기를 켠 기기인가
 export function reducedMotion() {

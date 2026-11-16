@@ -104,7 +104,9 @@ body.dark .notice {
   align-items: center;
   gap: var(--s2);
 }
-.say-travis .face { width: 72px; height: 72px; }
+.say-travis .face { flex: none; width: 72px; height: 72px; }
+.prompt.no-face .face { display: none; }
+.prompt.no-face { min-height: 72px; }
 h1.say { font-size: 28px; line-height: 1.4; }
 
 /* ---------- 단추·입력 ---------- */
@@ -438,8 +440,9 @@ button.trip.dim { opacity: 0.45; }
 .card-face { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; }
 .card-face[hidden] { display: none; }
 .card-front img { width: 100%; height: 100%; object-fit: cover; }
-.card-back { padding: var(--s2); font-size: 18px; font-weight: 700; line-height: 1.45; }
-.card-row:has(.card:only-child) .card-back { font-size: 24px; padding: var(--s3); }
+.card-back { flex-direction: column; gap: var(--s1); padding: var(--s1); font-size: 18px; font-weight: 700; line-height: 1.4; }
+.card-thumb { flex: none; width: 30%; aspect-ratio: 1; object-fit: cover; border: 2px solid var(--text); border-radius: var(--radius); }
+.card-row:has(.card:only-child) .card-back { font-size: 24px; padding: var(--s3); gap: var(--s2); }
 
 /* ---------- S5 장면 ---------- */
 .scene {
@@ -490,6 +493,22 @@ button.trip.dim { opacity: 0.45; }
   border-radius: var(--radius);
 }
 .scene-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* 간판 글자: 그림의 빈 간판 자리에 얹는다. 글자 크기는 그림 너비를 따른다. */
+.sign-host { container-type: inline-size; }
+.sign-text {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 4cqw;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  pointer-events: none;
+}
 .tv {
   position: absolute;
   top: var(--s1);
@@ -542,6 +561,9 @@ button.trip.dim { opacity: 0.45; }
 }
 .line.key { border-left-color: var(--accent); }
 .line.playing { background: var(--mark); }
+.line.flash { background: var(--mark); outline: 3px solid var(--accent); outline-offset: -3px; }
+.line.picked { outline: 3px dashed var(--text); outline-offset: -3px; }
+.picking .clue { border: 2px solid var(--accent); border-radius: var(--radius); }
 .line-text { margin: 0; font-size: 20px; line-height: 1.6; cursor: pointer; }
 .title-line .line-text { font-size: 26px; font-weight: 700; }
 .line.evidence .line-text {
@@ -623,7 +645,22 @@ button.trip.dim { opacity: 0.45; }
 .opt:disabled { opacity: 0.5; }
 .opt.is-right { opacity: 1; border-color: var(--ok); color: var(--ok); border-width: 4px; }
 .opt.is-wrong { opacity: 1; border-color: var(--bad); color: var(--bad); border-style: dashed; }
-.opt.is-mine { opacity: 1; background: var(--surface); }
+.opt.is-mine { opacity: 1; background: var(--surface); border-width: 4px; }
+.opt.mood { min-height: 84px; }
+.mood-img { flex: none; width: 68px; height: 68px; object-fit: cover; border-radius: var(--radius); }
+.ask-pick .ask-line { min-height: 48px; }
+.picked-line { margin: 0; flex: 1; font-size: 20px; }
+.picked-why { margin: 0; flex: 1; color: var(--muted); }
+.star-form[hidden] { display: none; }
+/* 다시 보기: 내가 고른 답을 작게 여러 줄 */
+.ask-reviews { display: flex; flex-direction: column; gap: var(--s1); }
+.ask-review .face { width: 40px; height: 40px; }
+.ask-review .prompt.no-face { min-height: 0; }
+.ask-review .say-text { font-size: 18px; }
+.ask-review .opt { min-height: 44px; font-size: 18px; padding: 4px var(--s2); }
+.ask-review .opt.mood { min-height: 56px; }
+.ask-review .mood-img { width: 44px; height: 44px; }
+.ask-reviews .ask { gap: 4px; }
 .opt-row .meaning { flex: none; align-self: center; }
 .meaning[aria-pressed="true"] { background: var(--text); color: var(--bg); }
 .ask-wide { display: flex; gap: var(--s3); align-items: center; }
@@ -645,10 +682,96 @@ button.trip.dim { opacity: 0.45; }
 }
 .star-status { flex-basis: 100%; margin: 0; min-height: 1.5em; font-weight: 700; }
 
+/* ---------- S6 To be continued ---------- */
+.tbc {
+  flex: none;
+  position: relative;
+  height: calc(100vh - var(--notice-h));
+  overflow: hidden;
+  background: var(--dark-bg);
+  color: var(--dark-text);
+}
+.tbc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tbc-quote {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: var(--s2) var(--s4);
+  background: var(--dark-bg);
+  font-size: 72px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.tbc-ask {
+  position: absolute;
+  left: var(--s3);
+  right: var(--s3);
+  bottom: var(--s3);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+}
+.tbc-ask[hidden] { display: none; }
+.tbc-dark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  background: var(--dark-bg);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.9s ease-in;
+}
+.tbc-dark.on { opacity: 1; visibility: visible; }
+.tbc-title { margin: 0; font-size: 56px; font-weight: 700; }
+.tbc-end { display: flex; flex-direction: column; align-items: center; gap: var(--s3); font-size: 22px; }
+.tbc-end[hidden] { display: none; }
+.tbc-end button:not(.primary) { min-width: 160px; }
+
+/* ---------- S7 지난 이야기 ---------- */
+.recap {
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--s3) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.recap-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
+.recap-cards li { display: flex; flex-direction: column; align-items: center; gap: var(--s1); }
+.recap-cards .card { width: 200px; }
+.recap-sum { margin: 0; }
+.recap-predicts { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--s3); }
+.recap-predicts dt { font-weight: 700; }
+.recap-predicts dd { margin: 0; }
+
+/* ---------- S8 암호 ---------- */
+.code-input {
+  width: 320px;
+  min-height: 56px;
+  padding: var(--s1) var(--s2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--bg);
+}
+.code-ok { font-size: 22px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    /* 0.01ms로 두면 검은 화면에서 밝은 화면으로 넘어올 때 물려받는 글자색이 한 겹씩 늦게 바뀐다. 전환을 아예 끈다. */
+    transition: none !important;
   }
 }

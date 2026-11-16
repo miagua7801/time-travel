@@ -11,9 +11,11 @@ export function buildFields(rec) {
   f.done = rec.done.length;
   for (const [id, c] of Object.entries(rec.checks)) f[id] = c.first ? 'O' : 'X' + (c.pick + 1); // X 뒤 숫자는 첫 시도에 고른 선지 번호
   for (const [id, pick] of Object.entries(rec.predict)) f[id] = line(`${id}.${pick}`);
+  // 두 번째 여행: 예측 자리에서 고른 줄과 이유. 대기열에는 D 번호로만 두고, 문장은 보낼 때 채운다.
+  for (const [id, p] of Object.entries(rec.picks)) f[id] = (p.d === null ? line('btn.none') : 'D' + p.d) + (p.why ? ' / ' + p.why : '');
   for (const [id, m] of Object.entries(rec.mood)) f[id] = m;
   for (const [id, text] of Object.entries(rec.star)) if (text) f[id] = text;
-  // 두 번째 여행의 고른 줄(picks), 간판, 엔딩, 단서 수첩 칸은 그 화면을 만드는 단계에서 더한다.
+  // 간판, 엔딩, 단서 수첩 칸은 그 화면을 만드는 단계에서 더한다.
   return f;
 }
 

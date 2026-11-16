@@ -9,6 +9,9 @@ import { renderTitle } from './screens/s2-title.js';
 import { renderReport } from './screens/s3-report.js';
 import { renderMap } from './screens/s4-map.js';
 import { renderScene } from './screens/s5-scene.js';
+import { renderContinued } from './screens/s6-continued.js';
+import { renderRecap } from './screens/s7-recap.js';
+import { renderCode } from './screens/s8-code.js';
 import { renderSoon } from './screens/soon.js';
 
 // 아직 만들지 않은 화면은 "준비 중" 자리로 간다
@@ -19,9 +22,12 @@ const SCREENS = {
   s3: renderReport,
   s4: renderMap,
   s5: renderScene,
+  s6: renderContinued,
+  s7: renderRecap,
+  s8: renderCode,
 };
 // 검은 바탕 화면
-const DARK = new Set(['s0', 's1', 's2']);
+const DARK = new Set(['s0', 's1', 's2', 's6']);
 
 // 앱 전체가 함께 쓰는 값
 export const app = {
