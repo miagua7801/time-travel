@@ -25,6 +25,23 @@ function doGet() {
   );
 }
 
+/**
+ * 열쇠 점검: 편집기에서 이 함수를 골라 [실행]하면 실행 로그에 열쇠 '지문'과 APP_URL이 나온다.
+ * 지문은 열쇠를 SHA-256으로 바꾼 앞 8자이고, 열쇠 자체는 찍지 않는다.
+ * 교사 컴퓨터에서 node tools/key-check.mjs로 나온 지문과 같아야 한다. 다르면 KEY를 다시 넣는다.
+ */
+function checkKey() {
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty('KEY') || '';
+  var key = raw.trim();
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, key, Utilities.Charset.UTF_8);
+  var hex = bytes.map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+  Logger.log('KEY 길이 ' + key.length + (raw.length !== key.length ? ' (앞뒤 공백 ' + (raw.length - key.length) + '자 있음, 무시함)' : '') +
+    ', 모양 ' + (/^[A-Za-z0-9_-]{43}$/.test(key) ? '맞음' : '틀림'));
+  Logger.log('열쇠 지문 ' + hex.slice(0, 8));
+  Logger.log('APP_URL ' + (props.getProperty('APP_URL') || '(없음)'));
+}
+
 function page_(body) {
   var html =
     '<!doctype html><html lang="ko"><head><meta charset="utf-8">' +

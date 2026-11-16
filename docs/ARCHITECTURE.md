@@ -51,6 +51,7 @@ tools/
   check-content.mjs        평문 데이터 점검 (잠그기 전에 실행)
   check-repo.mjs           커밋 전 점검: 평문 본문·mp3·열쇠·암호가 저장소에 없는지
   code-hash.mjs            장면 5 암호 → config.js에 넣을 해시
+  key-check.mjs            열쇠 지문(SHA-256 앞 8자) 찍기. 입구의 checkKey()와 견준다. 열쇠는 찍지 않음
   lib.mjs                  위 도구들이 함께 쓰는 것 (평문 읽기, 본문 자료 만들기·점검, 잠그기·풀기)
   vault-test.html          잠금 시험 페이지. 교사 컴퓨터에만 둠 (커밋 안 함). localhost에서만 동작하고 개수와 결과만 보임
   shot.mjs                 Playwright 1366×768 캡처와 화면 점검 (tools/shots/). private/vault.key를 읽으므로 커밋 안 함
