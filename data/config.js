@@ -10,7 +10,7 @@ export const NUMBER_MAX = 40;
 // 결과 수신 Apps Script 웹 앱 주소(…/exec). 비워 두면 전송 없이 게임만 동작한다.
 export const RESULT_URL = '';
 
-// 학교 계정 입구 주소(…/exec). 교사 안내용이며 학생 화면에는 쓰지 않는다.
+// 학교 계정 입구 주소. 저장소가 공개이므로 비워 둔다(교사 메모에 따로 적는다). 학생 화면에는 쓰지 않는다.
 export const GATE_URL = '';
 
 // 장면 5 암호 해시. 암호 낱말은 여기에 적지 않는다.

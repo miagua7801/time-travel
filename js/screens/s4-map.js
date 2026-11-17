@@ -81,7 +81,7 @@ export function renderMap(root, { go, app }) {
   if (rec.trip === 2 || rec.flags.ended) {
     const notebook = el('button', { type: 'button', className: 'notebook', textContent: `★ ${rec.notes.length}/${NOTEBOOK_LIMIT}` });
     notebook.setAttribute('aria-label', `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}`);
-    notebook.addEventListener('click', () => go('s11'));
+    notebook.addEventListener('click', () => go('s11', { view: 'notebook' }));
     bar.append(notebook);
   }
   bar.append(button('btn.replayVideo', () => go('s1', { replay: true, back: 's4' }), 'small'));

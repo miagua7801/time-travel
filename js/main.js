@@ -12,7 +12,11 @@ import { renderScene } from './screens/s5-scene.js';
 import { renderContinued } from './screens/s6-continued.js';
 import { renderRecap } from './screens/s7-recap.js';
 import { renderCode } from './screens/s8-code.js';
+import { renderSign } from './screens/s9-sign.js';
+import { renderCertificate } from './screens/s10-certificate.js';
+import { renderRewind } from './screens/s11-rewind.js';
 import { renderSoon } from './screens/soon.js';
+import { flush } from './send.js';
 
 // 아직 만들지 않은 화면은 "준비 중" 자리로 간다
 const SCREENS = {
@@ -25,6 +29,9 @@ const SCREENS = {
   s6: renderContinued,
   s7: renderRecap,
   s8: renderCode,
+  s9: renderSign,
+  s10: renderCertificate,
+  s11: renderRewind,
 };
 // 검은 바탕 화면
 const DARK = new Set(['s0', 's1', 's2', 's6']);
@@ -68,6 +75,8 @@ async function boot() {
   const r = await openContent();
   app.access = r.ok ? 'ok' : r.reason;
   go('s0');
+  // 지난번에 보내지 못한 결과가 있으면 보낸다 (화면에는 알리지 않음)
+  if (r.ok) flush();
 }
 
 boot();

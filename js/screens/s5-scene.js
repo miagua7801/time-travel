@@ -25,7 +25,8 @@ export function renderScene(root, { go, app, opts, name }) {
 
   const rec = app.rec;
   const story = getStory();
-  const replay = rec.done.includes(n);
+  const rewind = Boolean(opts.rewind) && rec.flags.ended; // 되감기: 묻기 없음, ☆ 있음, "길 지도"는 되감기 지도로
+  const replay = rewind || rec.done.includes(n);
   let alive = true;
   let mode = null;      // 'all' | 'line' | 'tv'
   let lineD = null;     // 문장 듣기로 재생 중인 줄
@@ -89,7 +90,7 @@ export function renderScene(root, { go, app, opts, name }) {
   const noteAt = (d) => rec.notes.findIndex((x) => x.d === d);
   const reader = makeReader(data, {
     sceneNo: n,
-    stars: rec.trip === 2,
+    stars: rec.trip === 2 || rewind,
     starLimit: NOTEBOOK_LIMIT,
     starCount: () => rec.notes.length,
     isStarred: (d) => noteAt(d) >= 0,
@@ -261,7 +262,11 @@ export function renderScene(root, { go, app, opts, name }) {
   box.dataset.sound = 'loading';
   root.append(box);
 
-  if (replay) {
+  if (rewind) {
+    panel.hidden = false;
+    panel.replaceChildren(reviewView([], { onMap: () => go('s11') }).el);
+    box.dataset.phase = 'rewind';
+  } else if (replay) {
     // "장면 5부터"로 온 학생의 장면 1~4에는 고른 답이 없다
     const reviews = asks.filter(answered).map((a) => {
       if (a[0] === 'c') return checkReview(a, story.checks[a], rec.checks[a]);
