@@ -8,7 +8,7 @@ export const NUMBER_MIN = 1;
 export const NUMBER_MAX = 40;
 
 // 결과 수신 Apps Script 웹 앱 주소(…/exec). 비워 두면 전송 없이 게임만 동작한다.
-export const RESULT_URL = 'https://script.google.com/macros/s/AKfycbw3NfSJ0UbfIP8YTKGIqEpKWV3V47N6ie8qFKNoeSbKeQ6mW86rsrogytqd1Xee5hAz/exec';
+export const RESULT_URL = 'https://script.google.com/macros/s/AKfycbx0V2TYovuctfaYWFPlSr1QW3GpY20-8Acc0sVUZn83JnOVwWzXHyMsOp8jyNeew9TLGQ/exec';
 
 // 학교 계정 입구 주소. 저장소가 공개이므로 비워 둔다(교사 메모에 따로 적는다). 학생 화면에는 쓰지 않는다.
 export const GATE_URL = '';
