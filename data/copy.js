@@ -69,11 +69,11 @@ export const COPY = {
   // ---------- S4 길 지도 ----------
   's4.locked': { voice: 'hq', text: '다음 접속까지 잠금.' },
   'notebook.name': { voice: 'label', text: '단서 수첩' },
-  // 단서 기준 말풍선 (교사가 준 초안. 스토리보드에 아직 없음)
-  'rule.title': { voice: 'hq', text: '단서 기준. 다섯 개만 담아라.', draft: true },
-  'rule.1': { voice: 'label', text: '결말(간판·대통령·나비)과 이어지는 문장', draft: true },
-  'rule.2': { voice: 'label', text: '그때는 별것 아니었는데, 결말을 알고 보니 다르게 읽히는 문장', draft: true },
-  'rule.3': { voice: 'label', text: '"절대 하지 마라"처럼 경고나 약속이 담긴 문장', draft: true },
+  // 단서 기준 말풍선
+  'rule.title': { voice: 'hq', text: '단서 기준. 다섯 개만 담아라.' },
+  'rule.1': { voice: 'label', text: '결말(간판·대통령·나비)과 이어지는 문장' },
+  'rule.2': { voice: 'label', text: '그때는 별것 아니었는데, 결말을 알고 보니 다르게 읽히는 문장' },
+  'rule.3': { voice: 'label', text: '"절대 하지 마라"처럼 경고나 약속이 담긴 문장' },
 
   // ---------- S5 장면 ----------
   'scene.1.name': { voice: 'label', text: '장면 1 · 사무실' },

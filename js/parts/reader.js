@@ -4,6 +4,8 @@ import { el, button } from '../ui.js';
 import { line as copy } from '../text.js';
 import { clueRule } from './cluerule.js';
 
+const GLOSS_GAP = 4; // 낱말과 뜻 풍선 사이(px). css .gloss의 margin과 같게
+
 // scene: getScene(n)   opts: { sceneNo, stars, isStarred(d), onStar(d) → 'on' | 'off' | 'full', onLine(d), onReadEnd() }
 export function makeReader(scene, opts) {
   const listen = button('btn.listen', null, '');
@@ -25,7 +27,7 @@ export function makeReader(scene, opts) {
 
   const closeGloss = () => { if (openGloss) openGloss.close(); };
 
-  // 단어 뜻: 낱말 아래에 한국어 뜻만 말풍선으로. 한 번에 하나.
+  // 단어 뜻: 낱말 위에 한국어 뜻만 말풍선으로(위에 자리가 없으면 아래). 한 번에 하나.
   //   가리키기(마우스): 올리면 열리고 떼면 닫힘 · 키보드 포커스: 가 있는 동안 열림
   //   누르기(마우스·터치·Enter): 열린 채로 고정, 다시 누르면 닫힘 · Esc나 다른 곳을 누르면 닫힘
   const vocabButton = (text, meaning) => {
@@ -48,6 +50,10 @@ export function makeReader(scene, opts) {
         const w = wrap.getBoundingClientRect();
         const b = body.getBoundingClientRect();
         bubble.classList.toggle('to-left', w.left - b.left > b.width / 2);
+        // 풍선은 낱말 위에 띄운다. 본문 칸 안에서 위에 자리가 없을 때만 아래로.
+        bubble.classList.remove('below');
+        const room = w.top - Math.max(b.top, 0);
+        bubble.classList.toggle('below', room < bubble.offsetHeight + GLOSS_GAP);
         openGloss = me;
       } else if (!on && bubble.isConnected) {
         bubble.remove();
