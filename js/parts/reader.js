@@ -2,6 +2,7 @@
 // 영어 문장은 잠긴 파일에서 받은 것을 그대로 보여 준다. 기기에는 D 번호만 저장한다.
 import { el, button } from '../ui.js';
 import { line as copy } from '../text.js';
+import { clueRule } from './cluerule.js';
 
 // scene: getScene(n)   opts: { sceneNo, stars, isStarred(d), onStar(d) → 'on' | 'off' | 'full', onLine(d), onReadEnd() }
 export function makeReader(scene, opts) {
@@ -9,40 +10,61 @@ export function makeReader(scene, opts) {
   listen.classList.add('listen');
   const note = el('p', { className: 'reader-note' });
   note.setAttribute('role', 'status');
-  const count = el('span', { className: 'clue-count' });
-  const head = el('div', { className: 'reader-head' }, listen, note, opts.stars ? count : null);
+  // ★ n/5: 단서 기준 말풍선을 여는 단추. 말풍선은 본문 칸 위 줄에 끼어 들어가 본문을 가리지 않는다.
+  const rule = opts.stars ? clueRule({
+    mode: 'inline',
+    text: () => `★ ${opts.starCount()}/${opts.starLimit}`,
+    label: () => `${copy('notebook.name')} ${opts.starCount()}/${opts.starLimit}`,
+  }) : null;
+  const head = el('div', { className: 'reader-head' }, listen, note, rule ? rule.wrap : null);
 
   const body = el('div', { className: 'reader-body' });
   const rows = new Map(); // d → { row, play, star }
-  let openGloss = null;
+  let openGloss = null; // 지금 열린 뜻 풍선의 낱말 { word, close }
   let picking = null; // 문장 고르기 중이면 고른 줄을 받을 함수
 
-  const closeGloss = () => {
-    if (!openGloss) return;
-    openGloss.bubble.remove();
-    openGloss.word.setAttribute('aria-expanded', 'false');
-    openGloss = null;
-  };
+  const closeGloss = () => { if (openGloss) openGloss.close(); };
 
-  // 단어 뜻: 누르면 낱말 아래에 뜻 풍선. 다시 누르거나 다른 곳을 누르거나 Esc로 닫는다.
+  // 단어 뜻: 낱말 아래에 한국어 뜻만 말풍선으로. 한 번에 하나.
+  //   가리키기(마우스): 올리면 열리고 떼면 닫힘 · 키보드 포커스: 가 있는 동안 열림
+  //   누르기(마우스·터치·Enter): 열린 채로 고정, 다시 누르면 닫힘 · Esc나 다른 곳을 누르면 닫힘
   const vocabButton = (text, meaning) => {
     const word = el('button', { type: 'button', className: 'vocab', textContent: text });
     word.setAttribute('aria-expanded', 'false');
     const wrap = el('span', { className: 'vocab-wrap' }, word);
+    const bubble = el('span', { className: 'gloss', lang: 'ko', textContent: meaning });
+    bubble.setAttribute('role', 'status');
+    let hover = false;
+    let focus = false;
+    let sticky = false;
+    let shut = false; // 눌러서 닫은 뒤에는 포커스·가리키기가 떠날 때까지 다시 열지 않는다
+    const me = { word, close() { hover = focus = sticky = false; shut = true; sync(); } };
+    function sync() {
+      const on = !shut && (hover || focus || sticky);
+      if (on && !bubble.isConnected) {
+        if (openGloss && openGloss !== me) openGloss.close();
+        wrap.append(bubble);
+        // 오른쪽 끝의 낱말은 풍선을 왼쪽으로 붙인다
+        const w = wrap.getBoundingClientRect();
+        const b = body.getBoundingClientRect();
+        bubble.classList.toggle('to-left', w.left - b.left > b.width / 2);
+        openGloss = me;
+      } else if (!on && bubble.isConnected) {
+        bubble.remove();
+        if (openGloss === me) openGloss = null;
+      }
+      word.setAttribute('aria-expanded', String(on));
+    }
+    word.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { hover = true; sync(); } });
+    word.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { hover = false; if (!focus) shut = false; sync(); } });
+    word.addEventListener('focus', () => { focus = true; sync(); });
+    word.addEventListener('blur', () => { focus = false; sticky = false; if (!hover) shut = false; sync(); });
     word.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const wasOpen = openGloss && openGloss.word === word;
-      closeGloss();
-      if (wasOpen) return;
-      const bubble = el('span', { className: 'gloss', lang: 'ko', textContent: meaning });
-      bubble.setAttribute('role', 'status');
-      wrap.append(bubble);
-      // 오른쪽 끝의 낱말은 풍선을 왼쪽으로 붙인다
-      const w = wrap.getBoundingClientRect();
-      const b = body.getBoundingClientRect();
-      if (w.left - b.left > b.width / 2) bubble.classList.add('to-left');
-      word.setAttribute('aria-expanded', 'true');
-      openGloss = { word, bubble };
+      e.stopPropagation(); // 문장 듣기로 번지지 않게
+      if (sticky) { me.close(); return; }
+      shut = false;
+      sticky = true;
+      sync();
     });
     return wrap;
   };
@@ -94,6 +116,7 @@ export function makeReader(scene, opts) {
         const r = opts.onStar(ln.d);
         paint();
         showNote(r === 'full' ? 's11.full' : r === 'on' ? 's11.added' : null);
+        if (r === 'full') rule.show(4000); // 한도 문구와 함께 단서 기준을 보여 준다
         paintCount();
       });
       paint();
@@ -108,7 +131,7 @@ export function makeReader(scene, opts) {
     if (id) note.dataset.copy = id; else delete note.dataset.copy;
   }
   function paintCount() {
-    if (opts.stars) count.textContent = `★ ${opts.starCount()}/${opts.starLimit}`;
+    if (rule) rule.refresh();
   }
   paintCount();
 
@@ -134,7 +157,8 @@ export function makeReader(scene, opts) {
 
   let playingD = null;
   return {
-    el: el('section', { className: 'reader' }, head, body),
+    el: el('section', { className: 'reader' }, head, rule ? rule.panel : null, body),
+    rule,
     listen,
     checkEnd,
     // 재생 중인 줄 표시 (색 + ▶). null이면 지운다.
@@ -186,6 +210,7 @@ export function makeReader(scene, opts) {
       for (const r of rows.values()) r.play.disabled = !ok;
     },
     destroy() {
+      if (rule) rule.destroy();
       document.removeEventListener('click', onDocClick);
       document.removeEventListener('keydown', onDocKey);
     },

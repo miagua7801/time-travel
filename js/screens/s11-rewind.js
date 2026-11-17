@@ -1,7 +1,8 @@
 // S11 되감기 (스토리보드 6장, docs/ARCHITECTURE.md 3.2·3.6)
 // 길 지도(장면 1~5 강조) ⇄ 장면 다시 보기(묻기 없음, ☆ 있음) ⇄ 단서 수첩(최대 5칸, 문장 + 한 줄 메모) → "보고"
 // 두 번째 여행은 엔딩 전에도 S4의 수첩 단추로 단서 수첩만 연다 (opts.view === 'notebook').
-import { el, say, button, img } from '../ui.js';
+import { el, say, button, img, onLeave, later } from '../ui.js';
+import { clueRule } from '../parts/cluerule.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
@@ -53,9 +54,21 @@ function renderRewindMap(root, { go, app }) {
   mapImg.decoding = 'sync';
   const stage = el('div', { className: 'map-stage media' }, mapImg, el('ol', { className: 'map-cells' }, ...cells.map((c) => c.parentElement)));
 
-  const notebook = el('button', { type: 'button', className: 'notebook', textContent: countText(rec) });
-  notebook.setAttribute('aria-label', `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}`);
-  notebook.addEventListener('click', () => go('s11', { view: 'notebook' }));
+  const rule = clueRule({
+    mode: 'float',
+    text: () => countText(rec),
+    label: () => `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}`,
+    onClick: () => go('s11', { view: 'notebook' }),
+  });
+  rule.button.classList.add('notebook');
+  onLeave(() => rule.destroy());
+  const notebook = rule.wrap;
+  // 수첩이 처음 열릴 때(첫 여행은 되감기에 들어올 때) 단서 기준을 한 번 4초 보여 준다
+  if (!rec.flags.rule) {
+    rec.flags.rule = true;
+    saveRecord(rec);
+    later(300, () => rule.show(4000));
+  }
   const cert = button('btn.certificate', () => go('s10'), 'small');
   const bar = el('div', { className: 'map-bar' }, el('div', { className: 'map-status' }, head), el('div', { className: 'btn-row map-buttons' }, notebook, cert));
   const box = el('section', { className: 'map rewind' }, stage, bar);
@@ -68,7 +81,9 @@ function renderRewindMap(root, { go, app }) {
 function renderNotebook(root, { go, app, back }) {
   const rec = app.rec;
   const head = el('h1', { className: 'nb-title', textContent: line('notebook.name') });
-  const count = el('span', { className: 'clue-count', textContent: countText(rec) });
+  const rule = clueRule({ mode: 'inline', text: () => countText(rec), label: () => `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}` });
+  onLeave(() => rule.destroy());
+  const count = rule.button;
   const list = el('ol', { className: 'nb-list' });
   const status = el('div', { className: 'status nb-status', role: 'status' });
 
@@ -100,7 +115,7 @@ function renderNotebook(root, { go, app, back }) {
       li.dataset.d = String(note.d);
       return li;
     }));
-    count.textContent = countText(rec);
+    rule.refresh();
   }
 
   const report = button('btn.report', () => {
@@ -115,7 +130,8 @@ function renderNotebook(root, { go, app, back }) {
 
   draw();
   const box = el('section', { className: 'notebook-view' },
-    el('header', { className: 'nb-head' }, head, count),
+    el('header', { className: 'nb-head' }, head, rule.wrap),
+    rule.panel,
     list,
     el('div', { className: 'nb-foot' }, status, el('div', { className: 'btn-row' }, report, map)));
   box.dataset.state = 'notebook';

@@ -32,12 +32,34 @@ export function button(id, onClick, kind = '') {
   return b;
 }
 
-// 그림. 끌어서 저장하기를 막고, 파일이 없으면 그림만 빠진다.
+// 그림. 끌어서 저장하기를 막는다. 받지 못하면 1초 뒤 한 번 더 받아 보고, 그래도 안 되면 그림만 빠진다.
 export function img(src, className = '', alt = '') {
   const node = el('img', { src, className, alt, draggable: false, decoding: 'async' });
-  node.addEventListener('error', () => node.remove(), { once: true });
+  let retried = false;
+  node.addEventListener('error', () => {
+    if (retried) { node.remove(); return; }
+    retried = true;
+    setTimeout(() => { if (node.isConnected) node.src = src + (src.includes('?') ? '&' : '?') + 'r=1'; }, 1000);
+  });
   return node;
 }
+
+// 다음 화면에 쓸 그림을 미리 받아 둔다. 학급 전체가 한꺼번에 받을 때 빈 상자가 보이지 않게.
+const kept = new Map(); // 주소 → Image (받은 그림이 메모리에서 빠지지 않게 잡아 둔다)
+export function preload(urls) {
+  for (const u of urls) {
+    if (!u || kept.has(u)) continue;
+    try {
+      const im = new Image();
+      im.decoding = 'async';
+      if ('fetchPriority' in im) im.fetchPriority = 'low';
+      im.src = u;
+      kept.set(u, im);
+    } catch (e) { /* 미리 받기 실패는 무시 */ }
+  }
+}
+export const cardSrc = (name) => `assets/img/cards/${name}.webp`;
+export const moodSrc = (key) => `assets/img/mood/mood_${key}.webp`;
 
 export function charImg(name, className) {
   const node = img(`assets/characters/${name}.png`, className, '');
@@ -46,7 +68,7 @@ export function charImg(name, className) {
 }
 
 // 묻기 칸의 Travis 얼굴을 미리 받아 둔다
-try { new Image().src = 'assets/characters/travis_basic.png'; } catch (e) { /* 미리 받기 실패는 무시 */ }
+preload(['assets/characters/travis_basic.png']);
 
 // 움직임 줄이기를 켠 기기인가
 export function reducedMotion() {

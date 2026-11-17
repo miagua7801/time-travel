@@ -34,7 +34,7 @@ export function newRecord() {
   return {
     v: 2,
     cls: null, num: null, trip: null, day: null,
-    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false },
+    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false, rule: false },
     done: [],
     checks: {}, predict: {}, picks: {}, mood: {}, star: {},
     sign: { fixed: [], wrong: 0 },

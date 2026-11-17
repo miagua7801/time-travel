@@ -3,10 +3,10 @@
 // 낱말을 누르면 간판 아래에 선지 2개(열 때마다 좌우를 섞음). 맞으면 간판의 낱말이 바뀐다.
 // 틀리면 고른 선지에 ✕가 붙고 흐려지며 남은 선지만 누를 수 있다. 흔들기·문구 없음.
 // 다 고치면 내레이션 → "수료증"(S10).
-import { el, say, button, img, onLeave } from '../ui.js';
+import { el, say, button, img, onLeave, preload, cardSrc, moodSrc } from '../ui.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
-import { SIGN_SPOT } from '../../data/scenes.js';
+import { SIGN_SPOT, SCENES } from '../../data/scenes.js';
 import { signBox } from '../parts/sign.js';
 import { openCards } from '../parts/cardview.js';
 
@@ -25,6 +25,8 @@ export function renderSign(root, { go, app }) {
   const fixed = new Set(rec.sign.fixed);
 
   const head = say('s9.open', {}, 'h1');
+  // 다음 화면(S10 수료증)의 카드 6장과 고른 관찰 일지 그림을 미리 받아 둔다
+  preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.values(rec.mood).map(moodSrc), 'assets/img/map.webp']);
 
   // ----- 간판: 그림을 간판 둘레만 잘라 크게 보인다 -----
   const cropX = SIGN_SPOT.left - MARGIN_X;

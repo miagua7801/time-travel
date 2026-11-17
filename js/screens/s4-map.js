@@ -1,21 +1,23 @@
 // S4 길 지도 (스토리보드 3장, docs/ARCHITECTURE.md 3.2)
 // 칸 상태: 마침(카드 앞면) · 지금(강조) · 잠김(자물쇠). 마친 장면을 누르면 다시 보기.
 // 수료증·단서 수첩 단추는 자리만 두었다. 가는 화면(S10·S11)과 S8은 해당 단계에서 만든다.
-import { el, say, button, img } from '../ui.js';
+import { el, say, button, img, onLeave, preload, cardSrc } from '../ui.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { SCENES, MAP_SPOTS } from '../../data/scenes.js';
 import { NOTEBOOK_LIMIT } from '../../data/config.js';
 import { openCards } from '../parts/cardview.js';
+import { clueRule } from '../parts/cluerule.js';
 
 const LONG_PRESS_MS = 500;
 
-// 지금 할 장면: 마치지 않은 첫 장면. 장면 5·6은 암호를 푼 뒤에만.
+// 지금 할 장면: 마치지 않은 첫 장면. 암호를 풀기 전에는 장면 5 칸까지만 '지금'이 되고, 누르면 암호 화면(S8)으로 간다.
+// 장면 6은 암호를 풀고 장면 5를 마친 뒤에만.
 export function currentScene(rec) {
   const done = new Set(rec.done);
   for (const s of SCENES) {
     if (done.has(s.n)) continue;
-    if (s.n >= 5 && !rec.flags.unlocked) return 0;
+    if (s.n === 6 && !rec.flags.unlocked) return 0;
     return s.n;
   }
   return 0;
@@ -57,9 +59,9 @@ export function renderMap(root, { go, app }) {
     }
     cell.addEventListener('click', () => {
       if (longPressed) { longPressed = false; return; }
+      // 장면 4를 마친 뒤의 장면 5 칸('지금')은 암호를 풀기 전이면 암호 화면으로
+      if (state === 'now' && s.n === 5 && !rec.flags.unlocked) { go('s8'); return; }
       if (state !== 'locked') { go('s5', { n: s.n }); return; }
-      // 장면 4를 마친 뒤의 장면 5 칸은 암호 화면으로
-      if (s.n === 5 && done.has(4)) { go('s8'); return; }
       status.replaceChildren(say('s4.locked'));
     });
     const li = el('li', { className: 'map-spot' }, cell);
@@ -79,10 +81,16 @@ export function renderMap(root, { go, app }) {
   if (done.size) bar.append(button('btn.cardView', () => showCards(), ''));
   if (rec.flags.ended) bar.append(button('btn.certificate', () => go('s10'), ''));
   if (rec.trip === 2 || rec.flags.ended) {
-    const notebook = el('button', { type: 'button', className: 'notebook', textContent: `★ ${rec.notes.length}/${NOTEBOOK_LIMIT}` });
-    notebook.setAttribute('aria-label', `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}`);
-    notebook.addEventListener('click', () => go('s11', { view: 'notebook' }));
-    bar.append(notebook);
+    // 단서 수첩 단추: 누르면 단서 수첩, 가리키거나 포커스가 가면 단서 기준 말풍선
+    const rule = clueRule({
+      mode: 'float',
+      text: () => `★ ${rec.notes.length}/${NOTEBOOK_LIMIT}`,
+      label: () => `${line('notebook.name')} ${rec.notes.length}/${NOTEBOOK_LIMIT}`,
+      onClick: () => go('s11', { view: 'notebook' }),
+    });
+    rule.button.classList.add('notebook');
+    onLeave(() => rule.destroy());
+    bar.append(rule.wrap);
   }
   bar.append(button('btn.replayVideo', () => go('s1', { replay: true, back: 's4' }), 'small'));
   // 여행 다시 고르기: 장면 1을 마치기 전까지. 장면 1에서 담은 단서는 비운다.
@@ -95,6 +103,10 @@ export function renderMap(root, { go, app }) {
   }
 
   box.append(stage, el('div', { className: 'map-bar' }, status, bar));
+  // 지금 할 장면과 그다음 장면의 그림을 미리 받아 둔다
+  if (now) preload(SCENES.filter((s) => s.n === now || s.n === now + 1).map((s) => cardSrc(s.img)));
+  // 엔딩 뒤에는 "수료증" 단추로 갈 수 있으므로 카드 6장과 고른 관찰 일지 그림을 받아 둔다
+  if (rec.flags.ended) preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.values(rec.mood).map((k) => `assets/img/mood/mood_${k}.webp`)]);
   root.append(box);
   const target = cells.find((c) => c.state === 'now') || cells.find((c) => c.state === 'done');
   return target ? target.cell : box;

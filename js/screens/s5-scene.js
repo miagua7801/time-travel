@@ -1,7 +1,7 @@
 // S5 장면 화면 (스토리보드 3·4장, docs/ARCHITECTURE.md 3.4)
 // 단계: open(도입 3초) → read(읽기·듣기) → ask(묻기) → done(요약·카드·다음 장면). 마친 장면은 다시 보기.
 // 묻기: 확인(c) · 예측(p, 두 번째 여행은 문장 고르기) · 관찰 일지(m). 장면 3·5·6은 열릴 때 Travis 한 줄이 먼저 나온다.
-import { el, say, button, img, later, onLeave } from '../ui.js';
+import { el, say, button, img, later, onLeave, preload, cardSrc, moodSrc } from '../ui.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getScene, getStory } from '../content.js';
@@ -278,6 +278,18 @@ export function renderScene(root, { go, app, opts, name }) {
     panel.replaceChildren(reviewView(reviews, { onMap: () => go('s4'), star }).el);
     box.dataset.phase = 'replay';
   }
+  // 수첩이 처음 열릴 때(두 번째 여행의 장면 1) 단서 기준을 한 번 4초 보여 준다
+  if (reader.rule && !rec.flags.rule) {
+    rec.flags.rule = true;
+    saveRecord(rec);
+    later(300, () => reader.rule.show(4000));
+  }
+  // 이 장면의 관찰 일지 그림과 다음 장면 그림, (장면 6이면) 수료증에 쓸 그림을 미리 받아 둔다
+  const soon = [];
+  for (const a of asks) if (a[0] === 'm') soon.push(...MOODS[a].options.map(moodSrc));
+  if (SCENES[n]) soon.push(cardSrc(SCENES[n].img));
+  if (n === 6) soon.push(...SCENES.map((s) => cardSrc(s.img)));
+  preload(soon);
   // 본문이 한 화면에 다 들어오면 "다 읽었다"가 바로 켜진다
   requestAnimationFrame(() => reader.checkEnd());
 

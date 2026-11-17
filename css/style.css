@@ -881,6 +881,27 @@ button.notebook { min-width: 96px; }
 .nb-status .say-hq { color: var(--text); }
 .nb-status .say-hq::before { content: "✓ "; }
 
+/* ---------- 단서 기준 말풍선 ---------- */
+.clue-rule-wrap { position: relative; display: inline-flex; }
+button.clue-count { min-height: 44px; padding: 4px var(--s2); font-weight: 700; white-space: nowrap; }
+.clue-rule {
+  padding: var(--s1) var(--s2);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.45;
+}
+.clue-rule[hidden] { display: none; }
+.clue-rule .say-hq { margin: 0 0 4px; }
+.clue-rule ol { margin: 0; padding-left: 1.6em; }
+/* 본문 칸 위·수첩 제목 아래에 끼어 들어간다 (본문을 가리지 않음) */
+.clue-rule.inline { margin: var(--s1) var(--s2) 0; }
+.reader > .clue-rule.inline { flex: none; }
+/* 길 지도 아래 띠: 단추 위로 뜬다 (위는 지도 그림) */
+.clue-rule.float { position: absolute; right: 0; bottom: calc(100% + var(--s1)); width: 460px; z-index: 4; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
