@@ -31,8 +31,9 @@ export const VIDEO_WAIT_MS = 3000;
 // 듣기에서 덩어리와 덩어리 사이의 쉼(밀리초).
 // 출판사 음성 파일은 앞뒤에 조용한 구간이 들어 있어, 그대로 이으면 덩어리마다 0.6~1초씩 쉰다.
 // 숫자를 넣으면 그 조용한 구간을 건너뛰고 이만큼만 쉰다. null로 두면 파일을 그대로 잇는다.
-export const LISTEN_PAUSE_MS = 350;        // 문장(학습지 번호)과 문장 사이
-export const LISTEN_PAUSE_INLINE_MS = 150; // 한 문장 안의 덩어리 사이
+export const LISTEN_PAUSE_MS = 750;              // 이어 듣기: 문장(학습지 번호)과 문장 사이
+export const LISTEN_PAUSE_CHAIN_INLINE_MS = 550; // 이어 듣기: 한 문장 안의 덩어리 사이
+export const LISTEN_PAUSE_INLINE_MS = 150;       // 문장 하나 듣기·S6 음성: 덩어리 사이
 
 // 단서 수첩 한도
 export const NOTEBOOK_LIMIT = 5;

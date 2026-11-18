@@ -8,7 +8,7 @@ import { getScene, getStory } from '../content.js';
 import { loadSceneAudio, dropSceneAudio, play, stop, hasSound } from '../player.js';
 import { queueResult } from '../send.js';
 import { SCENES, MOODS } from '../../data/scenes.js';
-import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS } from '../../data/config.js';
+import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS, LISTEN_PAUSE_CHAIN_INLINE_MS } from '../../data/config.js';
 import { makeReader } from '../parts/reader.js';
 import { signBox, signText } from '../parts/sign.js';
 import { checkAsk, checkReview, predictAsk, predictReview, moodAsk, moodReview, pickAsk, pickReview, doneView, reviewView } from '../parts/ask.js';
@@ -124,7 +124,7 @@ export function renderScene(root, { go, app, opts, name }) {
   reader.listen.addEventListener('click', () => {
     if (mode === 'all') { stop(); return; }
     const started = play(order.map((o) => o[0]), {
-      pause: (i) => (order[i][1] === order[i - 1][1] ? LISTEN_PAUSE_INLINE_MS : LISTEN_PAUSE_MS), // 같은 문장 안이면 짧게
+      pause: (i) => (order[i][1] === order[i - 1][1] ? LISTEN_PAUSE_CHAIN_INLINE_MS : LISTEN_PAUSE_MS), // 같은 문장 안이면 짧게
       onStep: (i) => reader.setPlaying(order[i][1], true),
       onEnd: resetSound,
     });
