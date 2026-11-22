@@ -161,7 +161,7 @@ export function build({ map, extras, gloss, glossHead }) {
   for (const name of ['first_scene', 'word', 'meaning_ko']) {
     if (!glossHead.includes(name)) err(`word_gloss.csv에 ${name} 칸이 없다`);
   }
-  if (gloss.length !== 30) warn(`단어 뜻이 30개가 아니다: ${gloss.length}개`);
+  if (gloss.length !== 34) warn(`단어 뜻이 34개가 아니다: ${gloss.length}개`);
   const forms = extras.vocabForms || {};
   const seenWord = new Set();
   let spanTotal = 0;
