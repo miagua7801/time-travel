@@ -1,7 +1,12 @@
 // 장비 점검 (사용법 안내, 스토리보드 3장): 화면을 어둡게 덮고, 누를 단추 자리만 밝게 남겨 흰 점선으로 두른다.
 // 그 옆에 흰 글씨 [본부] 문구 한 줄을 두고 흰 점선 곡선으로 단추와 잇는다 (교사가 준 레퍼런스 모양).
-// 학생이 그 단추를 직접 눌러야 다음 단계로 간다(장면 화면이 did(단계 번호)를 알린다).
-// 따로 화면을 만들지 않고 화면(host) 위에 얹는다. 덮개는 누름을 막지 않는다. 움직이는 효과 없음.
+// 따로 화면을 만들지 않고 화면(host) 위에 얹는다. 움직이는 효과 없음.
+//
+// 누름 처리 (block):
+//   'none'    덮개는 누름을 막지 않는다. 단추는 원래대로 동작하고, 장면 화면이 did(no)로 알려 주면 다음으로 (수첩이 찼을 때 안내 등)
+//   'target'  가리킨 단추를 누르면 설명만 닫히거나 넘어가고 원래 동작은 일어나지 않는다. 다른 단추는 원래대로 (6·7단계)
+//   'all'     가리킨 단추를 누르면 설명만 넘어간다. 그 밖의 단추도 원래 동작을 막는다 (장비 점검 1~5단계: 소리가 한 순간도 나지 않게)
+//   가리킨 단추를 누르는 것은 click을 가장 먼저(capture) 받아 멈추므로, 단추의 원래 처리는 불리지 않는다. Enter·Space도 click으로 온다.
 import { el, button } from '../ui.js';
 import { line } from '../text.js';
 
@@ -19,12 +24,13 @@ document.addEventListener('pointerdown', () => { keyboard = false; }, true);
 
 // steps: [{ no, copy, target() → 가리킬 단추, hole() → 밝게 남길 곳(없으면 target), focus() → 포커스를 줄 요소(없으면 target),
 //           skip() → true면 건너뜀, sides → 문구를 놓아 볼 자리 순서 ('right' | 'left' | 'below' | 'above'),
-//           id → 화면에 적는 단계 이름(없으면 no), auto → 이 시간(밀리초)이 지나면 저절로 다음 단계, onShow() → 이 단계가 나올 때 }]
+//           id → 화면에 적는 단계 이름(없으면 no), auto → 이 시간(밀리초)이 지나면 저절로 다음 단계, onShow() → 이 단계가 나올 때,
+//           accept(el) → 가리킨 단추 말고도 이 단계를 넘기는 누름(예: 아무 ☆나), also() → 테두리 없이 함께 밝게 남길 곳들 }]
 // skip: true면 문구 아래에 "건너뛰기" (길 지도의 "사용법"으로 다시 볼 때)
+// done: { copy, ms } 마지막 단계까지 가면 이 [본부] 문구를 ms 동안 보이고 닫는다 (그동안에도 누름을 막는다)
 // onEnd(finished): 끝났을 때. 마지막 단계까지 갔으면 true, 건너뛰기·화면 떠남이면 false
-// onStep(step): 단계가 바뀔 때마다 (예: 열려 있는 단어 뜻 말풍선을 닫는다)
-// 단계의 also() → 테두리 없이 함께 밝게 남길 곳들 (예: 단서 2단계의 단서 기준 말풍선)
-export function makeGuide(host, { steps, skip = false, onEnd, onStep }) {
+// onStep(step): 단계가 바뀔 때마다
+export function makeGuide(host, { steps, skip = false, block = 'none', done = null, onEnd, onStep }) {
   // 덮개: 어두운 막(가운데 구멍) + 흰 점선 테두리 + 흰 점선 곡선 + 끝점
   const veil = svgEl('path', { class: 'guide-veil-fill', 'fill-rule': 'evenodd' });
   const ring = svgEl('rect', { class: 'guide-ring', rx: 12, ry: 12 });
@@ -36,13 +42,41 @@ export function makeGuide(host, { steps, skip = false, onEnd, onStep }) {
   const text = el('p', { className: 'say say-hq guide-text' });
   const tip = el('div', { className: 'guide-tip' }, text);
   tip.setAttribute('role', 'status');
-  if (skip) tip.append(button('btn.skip', () => end(false), 'small'));
+  const skipBtn = skip ? button('btn.skip', () => end(false), 'small') : null;
+  if (skipBtn) tip.append(skipBtn);
   let at = -1;
   let over = false;
+  let closing = false; // 마무리 문구를 보이는 중
   let raf = 0;
   let autoTimer = 0;
+  let doneTimer = 0;
+  let focusPending = false; // 키보드로 왔는데 가리킨 단추가 아직 준비되지 않음(예: 소리를 받는 동안 잠긴 이어 듣기)
 
   const shown = (t) => Boolean(t && t.isConnected && t.getClientRects().length);
+
+  // 누름 가로채기
+  const onClickCapture = (e) => {
+    if (over || block === 'none') return;
+    const t = e.target instanceof Element ? e.target : null;
+    if (!t || !host.contains(t)) return;
+    if (skipBtn && skipBtn.contains(t)) return; // "건너뛰기"는 그대로
+    if (closing) { if (block === 'all') { e.preventDefault(); e.stopImmediatePropagation(); } return; }
+    if (at < 0) return;
+    const s = steps[at];
+    const tg = s.target();
+    const hit = (tg && tg.contains(t)) || (s.accept && s.accept(t));
+    if (hit) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      begin(at + 1);
+      return;
+    }
+    if (block === 'all' && t.closest('button, .line-text, input, a, label')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  };
+  document.addEventListener('click', onClickCapture, true);
 
   function begin(i) {
     while (i < steps.length && steps[i].skip && steps[i].skip()) i++;
@@ -54,21 +88,30 @@ export function makeGuide(host, { steps, skip = false, onEnd, onStep }) {
     host.dataset.guide = s.id || String(s.no);
     if (!cover.isConnected) host.append(cover, tip);
     clearTimeout(autoTimer);
-    if (s.auto) autoTimer = setTimeout(() => { if (!over && at === i) begin(i + 1); }, s.auto);
+    if (s.auto) autoTimer = setTimeout(() => { if (!over && !closing && at === i) begin(i + 1); }, s.auto);
     if (onStep) onStep(s);
     if (s.onShow) s.onShow();
     const t = s.target();
     if (t && t.closest('.reader-body')) t.scrollIntoView({ block: 'nearest' });
-    if (keyboard) {
-      const f = s.focus ? s.focus() : t;
-      if (f && !f.disabled && shown(f)) f.focus({ preventScroll: true });
-    }
+    focusPending = true; // 한 단계에 한 번: 키보드로 조작 중일 때 단추가 준비되면 옮긴다
+    tryFocus();
     place();
+  }
+
+  // 키보드로 조작 중이면 가리킨 단추로 포커스를 옮긴다. 단추가 잠겨 있으면 준비되는 순간 옮긴다(tick에서 다시 본다).
+  function tryFocus() {
+    if (!focusPending || !keyboard || at < 0) return; // 그사이 마우스로 바꿨으면 옮기지 않는다
+    const s = steps[at];
+    const f = s.focus ? s.focus() : s.target();
+    if (f && !f.disabled && shown(f)) {
+      f.focus({ preventScroll: true });
+      focusPending = false;
+    }
   }
 
   // 가리키는 단추를 따라 덮개와 문구를 놓는다. 본문 칸 밖으로 굴러간 줄이면 잠시 감춘다.
   function place() {
-    if (over || at < 0) return;
+    if (over || closing || at < 0) return;
     const s = steps[at];
     const t = s.target();
     const hb = host.getBoundingClientRect();
@@ -155,33 +198,62 @@ export function makeGuide(host, { steps, skip = false, onEnd, onStep }) {
   // 화면이 바뀌어도(본문 굴림, 묻기 칸 열림) 덮개가 단추를 따라가게 한다.
   // 가리키던 단추가 없어지면(예: 뜻 보기 전에 답을 고름) 다음 단계로, 마지막이면 끝.
   function tick() {
-    if (over) return;
+    if (over || closing) return;
     if (!host.isConnected) { end(false); return; }
     if (!host.hidden && at >= 0) {
       const s = steps[at];
       const t = s.target();
       if ((s.skip && s.skip()) || !(t && t.isConnected)) begin(at + 1);
-      else place();
+      else { tryFocus(); place(); }
     }
     raf = requestAnimationFrame(tick);
   }
 
-  function end(finished) {
+  // 마무리 문구: 화면 전체를 덮고 가운데에 [본부] 문구만
+  function showDone() {
+    closing = true;
+    cancelAnimationFrame(raf);
+    clearTimeout(autoTimer);
+    const hb = host.getBoundingClientRect();
+    cover.style.display = '';
+    cover.setAttribute('viewBox', `0 0 ${hb.width} ${hb.height}`);
+    veil.setAttribute('d', `M0,0 H${hb.width} V${hb.height} H0 Z`);
+    for (const n of [ring, link, dot]) n.style.display = 'none';
+    text.textContent = line(done.copy);
+    text.dataset.copy = done.copy;
+    host.dataset.guide = 'done';
+    if (skipBtn) skipBtn.hidden = true;
+    tip.hidden = false;
+    tip.classList.add('is-done');
+    tip.style.left = `${Math.max(8, (hb.width - tip.offsetWidth) / 2)}px`;
+    tip.style.top = `${Math.max(8, (hb.height - tip.offsetHeight) / 2)}px`;
+    doneTimer = setTimeout(() => finish(true), done.ms);
+  }
+
+  function finish(finished) {
     if (over) return;
     over = true;
     cancelAnimationFrame(raf);
     clearTimeout(autoTimer);
+    clearTimeout(doneTimer);
+    document.removeEventListener('click', onClickCapture, true);
     cover.remove();
     tip.remove();
     delete host.dataset.guide;
     if (onEnd) onEnd(finished);
   }
 
+  function end(finished) {
+    if (over) return;
+    if (finished && done && !closing && host.isConnected) { showDone(); return; }
+    finish(closing ? true : finished);
+  }
+
   return {
-    start() { if (over) return; begin(0); if (!over) raf = requestAnimationFrame(tick); },
-    // 학생이 no 단계의 단추를 눌렀다. 지금 단계이거나 그 뒤 단계면 그다음으로 간다(앞 단계를 건너뛰고 눌러도 따라간다).
+    start() { if (over) return; begin(0); if (!over && !closing) raf = requestAnimationFrame(tick); },
+    // (block 'none') 학생이 no 단계의 단추를 눌렀다. 지금 단계이거나 그 뒤 단계면 그다음으로 간다.
     did(no) {
-      if (over || at < 0) return;
+      if (over || closing || at < 0) return;
       if (no < steps[at].no) return;
       const i = steps.findIndex((s) => s.no === no);
       begin(i + 1);

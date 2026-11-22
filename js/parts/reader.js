@@ -27,6 +27,7 @@ export function makeReader(scene, opts) {
   let picking = null; // 문장 고르기 중이면 고른 줄을 받을 함수
 
   const closeGloss = () => { if (openGloss) openGloss.close(); };
+  let glossBlocked = false; // 장비 점검 중에는 단어 뜻 말풍선을 열지 않는다
 
   // 단어 뜻: 낱말 위에 한국어 뜻만 말풍선으로(위에 자리가 없으면 아래). 한 번에 하나.
   //   가리키기(마우스): 올리면 열리고 떼면 닫힘 · 키보드 포커스: 가 있는 동안 열림
@@ -43,7 +44,7 @@ export function makeReader(scene, opts) {
     let shut = false; // 눌러서 닫은 뒤에는 포커스·가리키기가 떠날 때까지 다시 열지 않는다
     const me = { word, close() { hover = focus = sticky = false; shut = true; sync(); } };
     function sync() {
-      const on = !shut && (hover || focus || sticky);
+      const on = !shut && !glossBlocked && (hover || focus || sticky);
       if (on && !bubble.isConnected) {
         if (openGloss && openGloss !== me) openGloss.close();
         wrap.append(bubble);
@@ -180,6 +181,7 @@ export function makeReader(scene, opts) {
     listen,
     checkEnd,
     closeGloss,
+    setGlossBlocked(v) { glossBlocked = v; if (v) closeGloss(); },
     // 재생 중인 줄 표시 (색 + ▶). null이면 지운다.
     setPlaying(d, follow) {
       if (playingD === d) return;

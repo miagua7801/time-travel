@@ -11,7 +11,7 @@ import { getScene, getStory } from '../content.js';
 import { loadSceneAudio, dropSceneAudio, play, stop, hasSound } from '../player.js';
 import { queueResult } from '../send.js';
 import { SCENES, MOODS } from '../../data/scenes.js';
-import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS, LISTEN_PAUSE_CHAIN_INLINE_MS, GUIDE_HINT_MS, GUIDE_CLUE_MS } from '../../data/config.js';
+import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS, LISTEN_PAUSE_CHAIN_INLINE_MS, GUIDE_HINT_MS, GUIDE_CLUE_MS, GUIDE_DONE_MS } from '../../data/config.js';
 import { makeReader } from '../parts/reader.js';
 import { makeGuide } from '../parts/guide.js';
 import { missionList } from '../parts/tasks.js';
@@ -79,7 +79,9 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
   let lineD = null;     // 문장 듣기로 재생 중인 줄
   let liveAsk = null;   // 숫자 키를 받을 묻기
   let guide = null;     // 장비 점검
-  let hint = null;      // 장비 점검 7단계 (장면 2의 "이전 장면")
+  let hint = null;      // 장비 점검 6단계(장면 1 묻기 칸의 뜻 보기)·7단계(장면 2의 "이전 장면")
+  let guidedHere = false; // 이번에 장비 점검을 보았다 → 장면 1 묻기 칸이 처음 열릴 때 6단계
+  let shown6 = false;
 
   // ----- 맨 위 띠: 길 지도 칸 6개 + 장면 이름 -----
   // 풀고 있는 장면과 이전 장면 다시 보기에서는 마친 장면 칸을 눌러 그 장면을 다시 볼 수 있다.
@@ -126,7 +128,6 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
     tv.addEventListener('click', () => {
       if (playing === 'tv') { stop(); return; }
       if (play([scene.tv], { onEnd: resetSound })) { playing = 'tv'; tv.setAttribute('aria-pressed', 'true'); setTv('btn.stop'); }
-      if (guide) guide.did(4);
     });
     if (!reducedMotion()) {
       tv.classList.add('glow');
@@ -172,7 +173,6 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
       else if (rec.notes.length >= NOTEBOOK_LIMIT) return 'full';
       else rec.notes.push({ d, memo: '' });
       saveRecord(rec);
-      if (guide && at < 0) guide.did(3.1); // 장비 점검 단서 1: 아무 ☆나 담으면 다음으로
       if (tasks) tasks.refresh();
       if (mode === 'rewind') afterStar();
       return at >= 0 ? 'off' : 'on';
@@ -184,15 +184,12 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
     } : undefined,
     onLine(d) {
       if (!ready) return;
-      if (guide) guide.did(2);
       if (playing === 'line' && lineD === d) { stop(); return; }
       const ids = chunksOf.get(d) || [];
       if (play(ids, { pause: () => LISTEN_PAUSE_INLINE_MS, onStep: () => reader.setPlaying(d, false), onEnd: resetSound })) { playing = 'line'; lineD = d; }
     },
     onReadEnd() { readDone.disabled = false; },
   });
-  // 점선 단어를 누르면 (장비 점검 3단계). 단어 단추는 클릭을 위로 넘기지 않으므로 먼저(capture) 받는다.
-  reader.body.addEventListener('click', (e) => { if (guide && e.target instanceof Element && e.target.closest('.vocab')) guide.did(3); }, true);
 
   let ready = false;
   function resetSound() {
@@ -215,7 +212,6 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
       reader.listen.textContent = line('btn.stop');
       reader.listen.dataset.copy = 'btn.stop';
     }
-    if (guide) guide.did(1);
   });
   // 소리 묶음을 못 받으면 듣기 단추는 흐린 채로 두고 읽기는 그대로 진행한다
   function loadSound() {
@@ -244,18 +240,16 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
   }
   const panel = el('div', { className: 'ask-panel' }, slot);
   panel.hidden = true;
-  // 뜻 보기를 누르면 (장비 점검 6단계). 선지를 고르면 7단계 안내를 지운다.
+  // 선지를 고르면 7단계 안내를 지운다.
   slot.addEventListener('click', (e) => {
     if (!(e.target instanceof Element)) return;
-    if (guide && e.target.closest('.meaning')) guide.did(6);
     if (e.target.closest('.opt')) endHint();
   });
 
   // "사용법"으로 마친 장면 1을 다시 볼 때는 "다 읽었다"와 묻기 칸(내가 고른 답)으로 5·6단계를 해 본다
   const demo = again && mode === 'replay';
   const readDone = button('btn.readDone', () => {
-    if (demo) { readFoot.hidden = true; showReview(); } else startAsks();
-    if (guide) guide.did(5);
+    if (demo) readFoot.hidden = true; else startAsks();
   }, 'primary');
   readDone.disabled = true;
   const readFoot = el('div', { className: 'reader-foot' }, readDone);
@@ -299,11 +293,17 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
   function startAsks() {
     readFoot.hidden = true;
     nextAsk();
-    // 장비 점검 7단계: 첫 여행의 첫 접속에서 장면 2 묻기 칸이 처음 열릴 때 한 번. 누르지 않아도 사라진다.
+    // 장비 점검 6단계: 장비 점검을 본 이번 접속에서 장면 1의 묻기 칸이 처음 열릴 때. '뜻 보기'를 누르면 설명만 닫힌다(뜻은 바뀌지 않음).
+    if (n === 1 && guidedHere && !shown6 && box.dataset.phase === 'ask' && slot.querySelector('.meaning')) {
+      shown6 = true;
+      hint = makeGuide(box, { block: 'target', steps: [{ no: 6, copy: 'guide.6', target: () => slot.querySelector('.meaning'), hole: () => panel, sides: ['above'] }], onEnd: () => { hint = null; } });
+      hint.start();
+    }
+    // 장비 점검 7단계: 첫 접속에서 장면 2 묻기 칸이 처음 열릴 때 한 번. 누르면 설명만 닫히고(이전 장면으로 가지 않음), 누르지 않아도 사라진다.
     if (prev && n === 2 && app.fresh && !rec.flags.guide7 && box.dataset.phase === 'ask') {
       rec.flags.guide7 = true;
       saveRecord(rec);
-      hint = makeGuide(box, { steps: [{ no: 7, copy: 'guide.7', target: () => prev, hole: () => panel, sides: ['above'] }], onEnd: () => { hint = null; } });
+      hint = makeGuide(box, { block: 'target', steps: [{ no: 7, copy: 'guide.7', target: () => prev, hole: () => panel, sides: ['above'] }], onEnd: () => { hint = null; } });
       hint.start();
       later(GUIDE_HINT_MS, endHint);
     }
@@ -432,11 +432,13 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
     box.dataset.phase = 'rewind';
   } else if (mode === 'past') {
     focus = showReview().focus;
-  } else if (mode === 'replay' && !demo) {
+  } else if (mode === 'replay') {
     showReview();
   }
   // 수첩이 처음 열릴 때(두 번째 여행의 장면 1) 단서 기준을 한 번 4초 보여 준다
   const firstGuide = live && n === 1 && app.fresh && !rec.flags.guide;
+  // 6단계를 실제 묻기 칸에서 띄울 접속: 처음 장비 점검을 본 접속, 또는 아직 마치지 않은 장면 1에서 "사용법"으로 다시 본 때
+  guidedHere = firstGuide || (again && live);
   if (mode !== 'past' && reader.rule && !rec.flags.rule) {
     rec.flags.rule = true;
     saveRecord(rec);
@@ -451,28 +453,38 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
     const exampleLine = () => reader.body.querySelector('.line:not(.title-line)');
     guide = makeGuide(box, {
       skip: again,
+      // 가리킨 단추를 누르면 설명만 넘어가고 원래 동작(소리·뉴스·단어 뜻·☆·묻기 칸)은 막는다. 다른 단추도 막는다.
+      block: 'all',
+      done: { copy: 'guide.end', ms: GUIDE_DONE_MS },
       steps: [
         { no: 1, copy: 'guide.1', target: () => reader.listen, skip: noSound, sides: ['right'] },
-        { no: 2, copy: 'guide.2', target: exampleLine, focus: () => exampleLine() && exampleLine().querySelector('.line-play'), skip: noSound, sides: ['below', 'above'] },
-        { no: 3, copy: 'guide.3', target: () => reader.body.querySelector('.vocab'), sides: ['below', 'above'] },
+        // 2: 문장 하나 (문장 글이나 ▷ 아무것이나. 점선 단어·☆는 빼고)
+        { no: 2, copy: 'guide.2', target: exampleLine, focus: () => exampleLine() && exampleLine().querySelector('.line-play'), skip: noSound, sides: ['below', 'above'],
+          accept: (t) => Boolean(t.closest('.reader-body .line-play') || (t.closest('.reader-body .line-text') && !t.closest('.vocab'))) },
+        // 3: 점선 단어 하나 (아무 점선 단어나)
+        { no: 3, copy: 'guide.3', target: () => reader.body.querySelector('.vocab'), sides: ['below', 'above'], accept: (t) => Boolean(t.closest('.reader-body .vocab')) },
         ...(reader.rule ? [
           // 단서 1: 문장 끝 ☆ 하나를 가리킨다. 아무 ☆나 눌러야 다음으로
-          { no: 3.1, id: 'c1', copy: 'guide.c1', target: () => { const l = exampleLine(); return l && l.querySelector('.clue'); }, sides: ['below', 'left'] },
+          { no: 3.1, id: 'c1', copy: 'guide.c1', target: () => { const l = exampleLine(); return l && l.querySelector('.clue'); }, sides: ['below', 'left'], accept: (t) => Boolean(t.closest('.reader-body .clue')) },
           // 단서 2: ★ n/5를 가리키고 단서 기준 말풍선을 함께 보인다. 4초 뒤 저절로 4단계로
           { no: 3.2, id: 'c2', copy: 'guide.c2', target: () => reader.rule.button, auto: GUIDE_CLUE_MS, onShow: () => reader.rule.show(GUIDE_CLUE_MS), also: () => [reader.rule.panel], sides: ['left', 'below'] }, // 말풍선도 밝게
         ] : []),
         { no: 4, copy: 'guide.4', target: () => tv, skip: () => noSound() || (box.dataset.sound === 'ok' && !hasSound(scene.tv)), sides: ['above', 'right'] },
         { no: 5, copy: 'guide.5', target: () => readDone, hole: () => reader.el, sides: ['left', 'above'] }, // 본문을 읽고 끝까지 내려야 하므로 본문 칸 전체를 밝게
-        { no: 6, copy: 'guide.6', target: () => slot.querySelector('.meaning'), hole: () => panel, sides: ['above'] }, // 선지를 읽어야 하므로 묻기 칸 전체를 밝게
+        // 6: "사용법"으로 마친 장면 1을 다시 볼 때만 이어서. 내가 고른 답 줄의 '뜻 보기'를 가리킨다(없으면 묻기 칸 자리)
+        ...(demo ? [{ no: 6, copy: 'guide.6', target: () => slot.querySelector('.meaning') || panel, hole: () => panel, sides: ['above'] }] : []),
       ],
       // 다음 단계로 넘어갈 때 열려 있는 단어 뜻 말풍선을 닫는다. 점선 단어를 누른 그 클릭이 말풍선을 연 뒤에 닫히도록 한 박자 늦춘다.
       onStep: () => setTimeout(() => reader.closeGloss(), 0),
       onEnd() {
         guide = null;
+        reader.setGlossBlocked(false);
+        if (demo) readFoot.hidden = true; // 다시 보기에서 5단계용으로 보인 "다 읽었다"는 거둔다
         if (firstGuide && !rec.flags.guide) { rec.flags.guide = true; saveRecord(rec); }
       },
     });
     // 첫 화면이 그려진 뒤에 시작한다 (테두리 자리를 재려면)
+    reader.setGlossBlocked(true); // 장비 점검 중에는 단어 뜻 말풍선을 열지 않는다
     requestAnimationFrame(() => { if (alive && guide) guide.start(); });
   }
 

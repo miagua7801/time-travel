@@ -48,5 +48,8 @@ export const GUIDE_HINT_MS = 6000;
 // 장비 점검 단서 2단계(두 번째 여행): ★ n/5를 가리킨 뒤 저절로 다음 단계로 가기까지(밀리초)
 export const GUIDE_CLUE_MS = 6000;
 
+// 장비 점검 1~5단계가 끝난 뒤 [본부] "장비 점검 끝. 이제 장면을 읽어라."를 보이는 시간(밀리초). 그동안에도 누름을 막는다
+export const GUIDE_DONE_MS = 2000;
+
 // 되감기(S11) 설명(첫 여행만): Travis 네 줄이 한 줄씩 나오는 간격(밀리초). 마지막 줄 뒤에 "임무 시작"
 export const REWIND_LINE_MS = 2500;

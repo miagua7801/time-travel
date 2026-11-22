@@ -121,6 +121,7 @@ export const COPY = {
   'guide.5': { voice: 'hq', text: "다 읽었으면 '다 읽었다'를 눌러라." },
   'guide.6': { voice: 'hq', text: "모르는 선지는 '뜻 보기'를 눌러라." },
   'guide.7': { voice: 'hq', text: "막히면 '이전 장면'에서 다시 읽어라." },
+  'guide.end': { voice: 'hq', text: '장비 점검 끝. 이제 장면을 읽어라.' },
 
   // 확인 문제 발문 (선지는 잠긴 파일에 있다)
   'ask.c1': { voice: 'travis', text: '뉴스에 나온 사람, 누구였지?' },

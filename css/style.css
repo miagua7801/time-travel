@@ -671,6 +671,9 @@ button.step.is-now { border-color: var(--accent); color: var(--on-accent); backg
 }
 .guide-tip[hidden] { display: none; }
 .guide-text { font-size: 22px; line-height: 1.4; white-space: nowrap; }
+/* 장비 점검 마무리 문구: 화면 가운데 */
+.guide-tip.is-done { padding: var(--s2) var(--s4); border-radius: var(--radius); background: var(--text); }
+.guide-tip.is-done .guide-text { font-size: 28px; }
 .guide-tip button.small { pointer-events: auto; color: var(--dark-text); border-color: var(--dark-text); }
 .ask { display: flex; flex-direction: column; gap: var(--s1); }
 .ask .say-text { margin: 0; font-size: 22px; font-weight: 700; }
