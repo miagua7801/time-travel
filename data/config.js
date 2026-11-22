@@ -37,3 +37,10 @@ export const LISTEN_PAUSE_INLINE_MS = 150;       // 문장 하나 듣기·S6 음
 
 // 단서 수첩 한도
 export const NOTEBOOK_LIMIT = 5;
+
+// 장면을 마친 뒤: Travis 요약이 혼자 나온 뒤 카드 획득이 붙기까지, 다시 "다음 장면" 단추가 나오기까지(밀리초)
+export const SUMMARY_HOLD_MS = 4000;
+export const NEXT_DELAY_MS = 1000;
+
+// 장비 점검 7단계("이전 장면" 안내)를 누르지 않아도 지우는 시간(밀리초). 선지를 고르면 바로 지운다.
+export const GUIDE_HINT_MS = 6000;

@@ -22,8 +22,11 @@ function audioContext() {
 }
 
 // 장면의 소리를 준비한다. 돌려주는 것: 쓸 수 있으면 true. false면 듣기 단추를 흐리게 한다.
+// 받는 도중에 다른 장면을 받기 시작하면(이전 장면 다시 보기 ↔ 지금 장면) 앞의 것은 버리고 false를 돌려준다.
+let loading = 0;
 export async function loadSceneAudio(n) {
   if (loadedScene === n && buffers.size) return true;
+  const my = ++loading;
   stop();
   buffers = new Map();
   edges = new Map();
@@ -31,18 +34,22 @@ export async function loadSceneAudio(n) {
   const ac = audioContext();
   if (!ac) return false;
   const pack = await loadScenePack(n);
-  if (!pack) return false;
+  if (my !== loading || !pack) return false;
+  const bufs = new Map();
+  const eds = new Map();
   try {
     await Promise.all(pack.ids.map(async (id) => {
       const bytes = pack.get(id);
       const buf = await ac.decodeAudioData(bytes.buffer);
-      buffers.set(id, buf);
-      edges.set(id, quietEdges(buf));
+      bufs.set(id, buf);
+      eds.set(id, quietEdges(buf));
     }));
   } catch (e) {
-    buffers = new Map();
     return false;
   }
+  if (my !== loading) return false;
+  buffers = bufs;
+  edges = eds;
   loadedScene = n;
   return true;
 }
@@ -59,6 +66,7 @@ function quietEdges(buf) {
 }
 
 export function dropSceneAudio() {
+  loading++;
   stop();
   buffers = new Map();
   edges = new Map();

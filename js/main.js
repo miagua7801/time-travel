@@ -40,6 +40,7 @@ const DARK = new Set(['s0', 's1', 's2', 's6']);
 export const app = {
   rec: loadRecord(),
   access: 'pending', // 'ok' | 'nokey' | 'badkey' | 'fetch'
+  fresh: false,      // 이번이 첫 접속인가 (S0에서 "접속"을 눌렀다). 장비 점검은 첫 접속에서만.
 };
 
 const screenEl = document.getElementById('screen');

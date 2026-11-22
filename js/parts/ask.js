@@ -2,6 +2,7 @@
 // 다시 보기의 내가 고른 답 (docs/ARCHITECTURE.md 3.4, 3.6)
 import { el, say, button, img, later } from '../ui.js';
 import { line } from '../text.js';
+import { SUMMARY_HOLD_MS, NEXT_DELAY_MS } from '../../data/config.js';
 
 const HOLD = 1500; // 짧은 확인 문구("맞아.", "네 예측, 기록했다." 등) 뒤 다음으로 넘어가기까지
 
@@ -309,19 +310,47 @@ function withSide(main, mainButton, star) {
   return el('div', { className: 'ask-wide' }, middle, side);
 }
 
-// 장면 완료: Travis 요약 → 카드 획득 → "다음 장면" (+ "★ 도전")
+// 장면 완료: Travis 요약이 혼자 먼저 → SUMMARY_HOLD_MS 뒤 카드 획득 → NEXT_DELAY_MS 뒤 "다음 장면".
+// 요약은 "다음 장면"을 누를 때까지 남는다. "★ 도전"은 요약과 함께 나온다.
+// 나중에 나올 것은 자리를 잡아 둔 채 감춰 두어(.is-waiting) 나타날 때 화면이 움직이지 않게 한다.
 export function doneView(scene, { onNext, star }) {
   const summary = say(`scene.${scene.n}.summary`);
-  const got = el('div', { className: 'got' },
+  const text = summary.querySelector('.say-text');
+  text.setAttribute('role', 'status');
+  const got = el('div', { className: 'got is-waiting' },
     img(`assets/img/cards/${scene.img}.webp`, 'got-card', ''),
     say('card.got', { card: line(`card.${scene.card}`) }));
-  got.setAttribute('role', 'status');
+  got.setAttribute('aria-hidden', 'true');
   const next = button('btn.nextScene', onNext, 'primary');
-  return { el: withSide(el('div', { className: 'ask ask-done' }, summary, got), next, star), focus: next };
+  next.classList.add('is-waiting');
+  next.disabled = true;
+  const box = el('div', { className: 'ask ask-done' }, summary, got);
+  box.dataset.stage = 'summary';
+  later(SUMMARY_HOLD_MS, () => {
+    got.classList.remove('is-waiting');
+    got.removeAttribute('aria-hidden');
+    got.setAttribute('role', 'status');
+    box.dataset.stage = 'card';
+    later(NEXT_DELAY_MS, () => {
+      next.classList.remove('is-waiting');
+      next.disabled = false;
+      box.dataset.stage = 'next';
+      // 학생이 다른 곳(★ 도전 등)으로 가 있지 않으면 "다음 장면"으로 포커스를 옮긴다
+      const a = document.activeElement;
+      if (!a || a === document.body || a === text) next.focus({ preventScroll: true });
+    });
+  });
+  return { el: withSide(box, next, star), focus: text };
 }
 
-// 다시 보기: 묻기 대신 내가 고른 답(기록이 있을 때만) + "길 지도" (+ "★ 도전")
-export function reviewView(reviews, { onMap, star }) {
-  const map = button('btn.map', onMap, 'primary');
-  return { el: withSide(el('div', { className: 'ask-reviews' }, ...reviews), map, star), focus: map };
+// 다시 보기: 묻기 대신 그 장면의 Travis 요약 + 내가 고른 답(기록이 있을 때만) + 단추(+ "★ 도전")
+//   summaryN  요약을 보일 장면 번호(없으면 요약 없음)   mainId  단추 문구('btn.map' 길 지도 · 'btn.nowScene' 지금 장면)
+export function reviewView(reviews, { onMain, mainId = 'btn.map', star = null, summaryN = 0 }) {
+  const main = button(mainId, onMain, 'primary');
+  let summary = null;
+  if (summaryN) {
+    summary = say(`scene.${summaryN}.summary`);
+    summary.classList.add('review-summary');
+  }
+  return { el: withSide(el('div', { className: 'ask-reviews' }, summary, ...reviews), main, star), focus: main };
 }

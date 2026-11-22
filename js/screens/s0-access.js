@@ -30,7 +30,8 @@ export function renderAccess(root, { go, app }) {
   if (!hasReport(rec)) {
     const msg = say('s0.connect', {}, 'h1');
     box.dataset.state = 'first';
-    box.append(msg, button('btn.connect', () => go(rec.flags.video ? 's2' : 's1'), 'primary'));
+    // 첫 접속: 장비 점검(사용법 안내)은 이 접속에서만 나온다. 다시 접속하면 나오지 않는다.
+    box.append(msg, button('btn.connect', () => { app.fresh = true; go(rec.flags.video ? 's2' : 's1'); }, 'primary'));
     return msg;
   }
 
@@ -51,6 +52,7 @@ function confirmWipe(box, { go, app }) {
   const wipe = button('btn.wipe', () => {
     clearRecord();
     app.rec = newRecord();
+    app.fresh = true;
     go('s1');
   }, 'primary');
   const cancel = button('btn.cancel', () => go('s0'));

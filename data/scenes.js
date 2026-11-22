@@ -1,11 +1,10 @@
 // 장면 6개의 뼈대 (docs/ARCHITECTURE.md 2.3). 영어 본문 문장은 넣지 않는다.
 // 본문·선지·카드 뒷면은 잠긴 파일(content/story.bin)에 있다. 문구는 data/copy.js의 id로 찾는다.
 //   card  카드 이름 문구 'card.{card}'     img   assets/img/cards/{img}.webp
-//   tv    그림 모서리 TV 단추의 뉴스        asks  묻기 순서 (c 확인 · p 예측 · m 관찰 일지)
+//   tv    그림 아래 "뉴스" TV 단추의 뉴스   asks  묻기 순서 (c 확인 · p 예측 · m 관찰 일지)
 //   star  ★ 도전 문구 'star.{star}'          echo  장면이 열릴 때 되돌려주는 예측
 //   next  "다음 장면" 대신 바로 가는 화면
 //   sign  장면 그림의 빈 간판 자리에 앱이 간판 문구를 얹어 쓴다 (문구는 잠긴 파일에서)
-
 export const SCENES = [
   { n: 1, card: 'sign',      img: 'card_1_sign',      tv: 'N1', asks: ['c1'],         star: 's1', sign: true },
   { n: 2, card: 'machine',   img: 'card_2_machine',             asks: ['c2', 'p1'],   star: 's2' },

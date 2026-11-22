@@ -3,6 +3,7 @@
 // 두 번째 여행은 엔딩 전에도 S4의 수첩 단추로 단서 수첩만 연다 (opts.view === 'notebook').
 import { el, say, button, img, onLeave, later } from '../ui.js';
 import { clueRule } from '../parts/cluerule.js';
+import { makeGuide } from '../parts/guide.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
@@ -42,7 +43,8 @@ function renderRewindMap(root, { go, app }) {
       cell = el('button', { type: 'button', className: 'cell is-done is-rewind', title: line(`scene.${s.n}.name`) }, card, no);
       cell.addEventListener('click', () => go('s5', { n: s.n, rewind: true }));
     } else {
-      cell = el('div', { className: 'cell is-done is-plain' }, card, no);
+      // 장면 6: 모든 장면을 마쳤으므로 1~5와 같은 파란 윤곽선. 단서는 장면 1~5에서만 찾으므로 누르는 칸은 아니다.
+      cell = el('div', { className: 'cell is-done is-rewind is-end' }, card, no);
     }
     cell.dataset.scene = String(s.n);
     const li = el('li', { className: 'map-spot' }, cell);
@@ -64,6 +66,7 @@ function renderRewindMap(root, { go, app }) {
   onLeave(() => rule.destroy());
   const notebook = rule.wrap;
   // 수첩이 처음 열릴 때(첫 여행은 되감기에 들어올 때) 단서 기준을 한 번 4초 보여 준다
+  const ruleShown = !rec.flags.rule;
   if (!rec.flags.rule) {
     rec.flags.rule = true;
     saveRecord(rec);
@@ -74,6 +77,13 @@ function renderRewindMap(root, { go, app }) {
   const box = el('section', { className: 'map rewind' }, stage, bar);
   box.dataset.state = 'rewind';
   root.append(box);
+  // 수첩이 다 찼는데 아직 보고하지 않았으면 단서 수첩 단추를 가리킨다 (장비 점검과 같은 모양).
+  // 단서 기준 말풍선이 처음 뜨는 때면 그것이 사라진 뒤에.
+  if (rec.notes.length >= NOTEBOOK_LIMIT && !rec.flags.reported) {
+    const hint = makeGuide(box, { steps: [{ no: 0, copy: 's11.goNotebook', target: () => rule.button, sides: ['above', 'left'] }] });
+    later(ruleShown ? 4300 : 300, () => hint.start());
+    onLeave(() => hint.end());
+  }
   return cells[0];
 }
 

@@ -174,9 +174,11 @@ export function makeReader(scene, opts) {
   let playingD = null;
   return {
     el: el('section', { className: 'reader' }, head, rule ? rule.panel : null, body),
+    body,
     rule,
     listen,
     checkEnd,
+    closeGloss,
     // 재생 중인 줄 표시 (색 + ▶). null이면 지운다.
     setPlaying(d, follow) {
       if (playingD === d) return;

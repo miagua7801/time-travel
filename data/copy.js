@@ -41,6 +41,10 @@ export const COPY = {
   'btn.trip1': { voice: 'button', text: '첫 여행' },
   'btn.trip2': { voice: 'button', text: '두 번째 여행' },
   'btn.star': { voice: 'button', text: '★ 도전' },
+  'btn.prevScene': { voice: 'button', text: '이전 장면' },
+  'btn.nowScene': { voice: 'button', text: '지금 장면' },
+  'btn.howto': { voice: 'button', text: '사용법' },
+  'btn.news': { voice: 'button', text: '뉴스' },
   'btn.wipe': { voice: 'button', text: '지움' },
   'btn.cancel': { voice: 'button', text: '취소' },
 
@@ -104,6 +108,15 @@ export const COPY = {
   'card.butterfly': { voice: 'label', text: '나비' },
 
   'echo.predict': { voice: 'travis', text: '네 예측: {pick}. 자, 읽어 봐.' },
+
+  // 장비 점검 (사용법 안내, 3장). 1~6은 장면 1, 7은 장면 2 묻기 칸이 처음 열릴 때
+  'guide.1': { voice: 'hq', text: '이어 듣기를 눌러 장면을 들어 보라.' },
+  'guide.2': { voice: 'hq', text: '문장 하나를 눌러 그 문장만 들어 보라.' },
+  'guide.3': { voice: 'hq', text: '점선 단어를 눌러 뜻을 확인하라.' },
+  'guide.4': { voice: 'hq', text: 'TV를 눌러 뉴스를 들어 보라.' },
+  'guide.5': { voice: 'hq', text: "다 읽었으면 '다 읽었다'를 눌러라." },
+  'guide.6': { voice: 'hq', text: "모르는 선지는 '뜻 보기'를 눌러라." },
+  'guide.7': { voice: 'hq', text: "막히면 '이전 장면'에서 다시 읽어라." },
 
   // 확인 문제 발문 (선지는 잠긴 파일에 있다)
   'ask.c1': { voice: 'travis', text: '뉴스에 나온 사람, 누구였지?' },
@@ -176,6 +189,8 @@ export const COPY = {
   's11.full': { voice: 'hq', text: '수첩은 다섯 칸이다. 하나를 빼라.' },
   's11.memo': { voice: 'label', text: '나중에 일어난 일' },
   's11.reported': { voice: 'hq', text: '단서 접수. 다음 시간에 확인한다.' },
+  // 되감기 길 지도에서 수첩이 다 찼을 때 ★ n/5 단추를 가리키는 안내 (교사 확정)
+  's11.goNotebook': { voice: 'hq', text: '수첩이 찼다. 단서 수첩을 열어 보고하라.' },
 
   // ---------- 두 번째 여행 (7장) ----------
   'trip2.pick': { voice: 'travis', text: '너는 결말을 알지. 이 장면에서 결말을 미리 알려 주는 문장을 하나 골라.' },

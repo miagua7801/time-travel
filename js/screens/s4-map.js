@@ -93,6 +93,8 @@ export function renderMap(root, { go, app }) {
     bar.append(rule.wrap);
   }
   bar.append(button('btn.replayVideo', () => go('s1', { replay: true, back: 's4' }), 'small'));
+  // 사용법: 장면 1 위에서 장비 점검을 다시 본다 ("건너뛰기" 있음)
+  bar.append(button('btn.howto', () => go('s5', { n: 1, guide: 'again' }), 'small'));
   // 여행 다시 고르기: 장면 1을 마치기 전까지. 장면 1에서 담은 단서는 비운다.
   if (!done.has(1)) {
     bar.append(button('btn.retrip', () => {

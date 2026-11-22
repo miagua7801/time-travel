@@ -34,7 +34,8 @@ export function newRecord() {
   return {
     v: 2,
     cls: null, num: null, trip: null, day: null,
-    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false, rule: false },
+    // guide: 장비 점검 1~6단계를 봤다 · guide7: 장면 2의 7단계를 봤다
+    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false, rule: false, guide: false, guide7: false },
     done: [],
     checks: {}, predict: {}, picks: {}, mood: {}, star: {},
     sign: { fixed: [], wrong: 0 },
