@@ -28,12 +28,14 @@ export function renderScene(root, { go, app, opts, name }) {
   const rec = app.rec;
   const rewind = Boolean(opts.rewind) && rec.flags.ended; // 되감기: 묻기 없음, ☆ 있음, "길 지도"는 되감기 지도로
   const mode = rewind ? 'rewind' : rec.done.includes(n) ? 'replay' : 'live';
+  // 되감기 길 지도에서 보고 뒤 장면 6 칸으로 온 다시 보기: ☆ 없이, "길 지도"는 되감기 길 지도로 돌아간다
+  const backTo = opts.back === 's11' && mode === 'replay' ? 's11' : 's4';
   // 길 지도의 "사용법": 장면 1 위에서 장비 점검을 다시 본다("건너뛰기" 있음)
   const again = opts.guide === 'again' && n === 1 && !rewind;
 
   let past = null;  // 다시 보기로 연 앞 장면
   let back = null;  // 지금 장면으로 돌아올 때 포커스를 돌려줄 단추
-  const now = buildScene(n, { app, go, mode, again, openPast: mode === 'live' ? openPast : null });
+  const now = buildScene(n, { app, go, mode, again, backTo, openPast: mode === 'live' ? openPast : null });
   root.append(now.box);
 
   function openPast(m, from) {
@@ -64,7 +66,7 @@ export function renderScene(root, { go, app, opts, name }) {
 }
 
 // 장면 하나. mode: 'live'(풀고 있는 장면) · 'replay'(길 지도에서 연 마친 장면) · 'rewind'(되감기) · 'past'(이전 장면 다시 보기)
-function buildScene(n, { app, go, mode, again = false, openPast = null, onNow = null, nowN = 0 }) {
+function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast = null, onNow = null, nowN = 0 }) {
   const scene = SCENES[n - 1];
   const data = getScene(n);
   const rec = app.rec;
@@ -157,7 +159,7 @@ function buildScene(n, { app, go, mode, again = false, openPast = null, onNow = 
   const noteAt = (d) => rec.notes.findIndex((x) => x.d === d);
   const reader = makeReader(data, {
     sceneNo: n,
-    stars: rec.trip === 2 || mode === 'rewind',
+    stars: (rec.trip === 2 && backTo !== 's11') || mode === 'rewind',
     starLimit: NOTEBOOK_LIMIT,
     starCount: () => rec.notes.length,
     isStarred: (d) => noteAt(d) >= 0,
@@ -373,7 +375,7 @@ function buildScene(n, { app, go, mode, again = false, openPast = null, onNow = 
     });
     const view = mode === 'past'
       ? reviewView(reviews, { onMain: onNow, mainId: 'btn.nowScene', summaryN: n })
-      : reviewView(reviews, { onMain: () => go('s4'), star, summaryN: n });
+      : reviewView(reviews, { onMain: () => go(backTo), star, summaryN: n });
     panel.hidden = false;
     slot.replaceChildren(view.el);
     box.dataset.phase = mode === 'past' ? 'past' : 'replay';

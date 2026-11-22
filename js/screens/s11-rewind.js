@@ -71,7 +71,7 @@ function renderWhy(root, { go, app }) {
 function renderRewindMap(root, { go, app }) {
   const rec = app.rec;
   const head = say('s11.open');
-  head.setAttribute('role', 'status');
+  const status = el('div', { className: 'map-status', role: 'status' }, head);
   const cells = SCENES.map((s, i) => {
     const card = img(`assets/img/cards/${s.img}.webp`, 'cell-card', line(`card.${s.card}`));
     const no = el('span', { className: 'cell-no', textContent: String(s.n) });
@@ -80,8 +80,14 @@ function renderRewindMap(root, { go, app }) {
       cell = el('button', { type: 'button', className: 'cell is-done is-rewind', title: line(`scene.${s.n}.name`) }, card, no);
       cell.addEventListener('click', () => go('s5', { n: s.n, rewind: true }));
     } else {
-      // 장면 6: 모든 장면을 마쳤으므로 1~5와 같은 파란 윤곽선. 단서는 장면 1~5에서만 찾으므로 누르는 칸은 아니다.
-      cell = el('div', { className: 'cell is-done is-rewind is-end' }, card, no);
+      // 장면 6: 모든 장면을 마쳤으므로 1~5와 같은 파란 윤곽선. 단서는 장면 1~5에서만 찾는다.
+      // 보고 전에는 누르면 잠금 문구, 보고 뒤에는 장면 6을 다시 보기로 연다(☆·묻기 없음). 돌아오면 이 지도로.
+      cell = el('button', { type: 'button', className: 'cell is-done is-rewind is-end', title: line(`scene.${s.n}.name`) }, card, no);
+      cell.addEventListener('click', () => {
+        if (rec.flags.reported) { go('s5', { n: s.n, back: 's11' }); return; }
+        const msg = say('s11.scene6Locked');
+        status.replaceChildren(msg);
+      });
     }
     cell.dataset.scene = String(s.n);
     const li = el('li', { className: 'map-spot' }, cell);
@@ -110,7 +116,9 @@ function renderRewindMap(root, { go, app }) {
     later(300, () => rule.show(4000));
   }
   const cert = button('btn.certificate', () => go('s10'), 'small');
-  const bar = el('div', { className: 'map-bar' }, el('div', { className: 'map-status' }, head), el('div', { className: 'btn-row map-buttons' }, notebook, cert));
+  // 보고 뒤에는 평소 길 지도(S4)로 가는 단추 (카드 보기·영상 다시 보기·사용법)
+  const toMap = rec.flags.reported ? button('btn.map', () => go('s4'), 'small') : null;
+  const bar = el('div', { className: 'map-bar' }, status, el('div', { className: 'btn-row map-buttons' }, notebook, cert, toMap));
   const box = el('section', { className: 'map rewind' }, stage, bar);
   box.dataset.state = 'rewind';
   root.append(box);

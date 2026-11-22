@@ -960,7 +960,7 @@ button.sign-word.fixed { color: var(--text); border-bottom-color: transparent; o
 .why-lines .say-text { font-size: 24px; font-weight: 700; line-height: 1.5; }
 .rewind-why .btn-row { min-height: 56px; }
 .cell.is-rewind { border: 6px solid var(--accent); }
-.cell.is-end { cursor: default; font-weight: 700; }
+.cell.is-end { font-weight: 700; }
 .rewind .map-status .say { font-size: 18px; }
 button.notebook { min-width: 96px; }
 .notebook-view {

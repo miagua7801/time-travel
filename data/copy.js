@@ -204,6 +204,8 @@ export const COPY = {
   's11.why2': { voice: 'travis', text: '아침에 하늘이 흐렸다. 오후에 비가 왔다.' },
   's11.why3': { voice: 'travis', text: '흐린 하늘이 비를 미리 알려 줬지. 그런 문장이 단서야.' },
   's11.why4': { voice: 'travis', text: '장면 1~5에서 단서를 찾아 ☆를 눌러.' },
+  // 되감기 길 지도의 장면 6 칸 (보고 전)
+  's11.scene6Locked': { voice: 'hq', text: '단서는 장면 1~5에서 찾아라. 보고 뒤에 열린다.' },
   's11.added': { voice: 'narration', text: '단서 수첩에 담았다.' },
   's11.full': { voice: 'hq', text: '수첩은 다섯 칸이다. 하나를 빼라.' },
   's11.memo': { voice: 'label', text: '나중에 일어난 일' },
