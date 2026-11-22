@@ -204,12 +204,14 @@ export function renderScene(root, { go, app, opts, name }) {
         onDone,
       });
     } else if (id[0] === 'm') {
+      // 처음 고른 카드를 기록한다 (결과 시트의 관찰 일지 칸). 수료증에는 정답 카드가 나온다.
       ask = moodAsk(id, MOODS[id], {
-        onPick(key) {
-          rec.mood[id] = key;
+        onFirst(pick) {
+          rec.mood[id] = MOODS[id].options[pick];
           saveRecord(rec);
-          reader.flash(MOODS[id].flash);
         },
+        onRight: () => reader.flash(MOODS[id].evidence),
+        onEvidence: (d) => reader.underline(d),
         onDone,
       });
     } else if (rec.trip === 2) {

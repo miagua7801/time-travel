@@ -143,10 +143,10 @@ export const SCENES = [
   { n: 5, card: 'boot',      img: 'card_5_boot',      echo: 'p2', asks: ['c5', 'p3'], star: 's5' },
   { n: 6, card: 'butterfly', img: 'card_6_butterfly', tv: 'N2', echo: 'p3', asks: ['c6', 'm3'], star: 's6', next: 's9' },
 ];
-export const MOODS = {            // 관찰 일지. 그림은 assets/img/mood/mood_{key}.webp. flash는 고른 뒤 잠깐 빛나는 줄
-  m1: { scene: 3, options: ['excited', 'scared', 'sleepy'],     flash: 24 },
-  m2: { scene: 4, options: ['happy', 'excited', 'terrified'],   flash: 40 },
-  m3: { scene: 6, options: ['happy', 'excited', 'shocked'],     flash: 73 },
+export const MOODS = {            // 관찰 일지. 그림은 assets/img/mood/mood_{key}.webp. answer는 정답, evidence는 근거 줄
+  m1: { scene: 3, options: ['excited', 'scared', 'sleepy'],     answer: 'excited',   evidence: 24 },
+  m2: { scene: 4, options: ['happy', 'excited', 'terrified'],   answer: 'terrified', evidence: 40 },
+  m3: { scene: 6, options: ['happy', 'excited', 'shocked'],     answer: 'shocked',   evidence: 73 },
 };
 export const PREDICTS = { p1: { scene: 2 }, p2: { scene: 4 }, p3: { scene: 5 } };   // 선택지 a·b·c의 글은 copy.js
 export const MAP_SPOTS = [[17.9, 42.9], [32.1, 58.0], [48.3, 55.3], [62.5, 39.8], [77.9, 48.8], [93.6, 53.2]];
@@ -183,7 +183,7 @@ S8로 가는 다른 길: S3 "장면 5부터" · S4의 장면 5 칸(장면 4를 �
 | S7 지난 이야기 | 2차시에 재접속했고 장면 1~4를 마쳤고 암호를 아직 안 풂 | 카드 4장, 요약, 내 예측 ①②(기록이 있는 것만) | 없음 | "이어서 출발" → S8 |
 | S8 암호 | S7, "장면 5부터", S4의 장면 5 칸, S6 | 입력 → "해제". 대소문자 구분 없음. "길 지도"로 돌아갈 수 있음 | `flags.unlocked` | 맞으면 S5-5, "길 지도"는 S4 |
 | S9 간판 | 장면 6을 마침 | 낱말을 누름 → 선지 2개. 맞으면 간판의 낱말이 바뀜. 틀리면 고른 선지에 ✕가 붙고 흐려지며 남은 선지만 누를 수 있음. "카드 보기" | `sign.fixed`, `sign.wrong` | 다 고치면 S10 |
-| S10 수료증 | S9 뒤, 또는 S4의 "수료증" | 카드 6장, 내 예측과 실제로 일어난 일(두 번째 여행은 고른 문장 3개), 관찰 일지 3장, ★ 답. 기록이 없는 칸은 숨김 | `flags.ended` | "되감기" → S11, "길 지도" → S4 |
+| S10 수료증 | S9 뒤, 또는 S4의 "수료증" | 카드 6장, 내 예측과 실제로 일어난 일(두 번째 여행은 고른 문장 3개), 관찰 일지 정답 카드 3장, ★ 답. 기록이 없는 칸은 숨김 | `flags.ended` | "되감기" → S11, "길 지도" → S4 |
 | S11 되감기 | S10의 "되감기", 이후 S4의 단서 수첩 | 길 지도(장면 1~5 강조) ⇄ 장면(묻기 없음, ☆ 있음) ⇄ 단서 수첩 → "보고" | `notes`, `flags.reported` | S4 |
 
 ### 3.3 "이어서 출발"이 가는 곳
@@ -226,7 +226,8 @@ S8로 가는 다른 길: S3 "장면 5부터" · S4의 장면 5 칸(장면 4를 �
 - 본문이 한 화면에 다 들어오는 장면은 "다 읽었다"가 바로 켜진다.
 - 확인 문제: 선지를 누르면 바로 판정. 첫 오답이면 근거 줄에 밑줄을 긋고 선지를 잠근 뒤 "다시 고르기". 둘째 오답이면 정답 선지를 표시하고 넘어간다. 기록은 첫 시도만 정답으로 센다.
 - 선지는 숫자 키 1~3으로도 고른다. 정답·오답은 색과 함께 기호(✓ ✕)와 `role="status"` 문구로 알린다.
-- 예측과 관찰 일지는 한 번 고르면 바꿀 수 없다. 관찰 일지를 고른 뒤에는 ①②③ 모두 `flash` 줄이 잠깐 빛나고, 맞다 틀리다는 말하지 않는다.
+- 예측은 한 번 고르면 바꿀 수 없고, 맞다 틀리다는 말하지 않는다.
+- 관찰 일지는 확인 문제와 같은 흐름이다(같은 코드 `judgedAsk`). 정답이면 "맞아."와 함께 `evidence` 줄이 잠깐 빛나고, 첫 오답이면 그 줄에 밑줄과 "다시 고르기", 둘째 오답이면 정답 카드를 표시하고 넘어간다. `rec.mood`에는 처음 고른 카드를 저장해 결과 시트로 보낸다. 수료증에는 기록이 있는 칸마다 정답 카드를 보인다(예전 방식으로 고른 기록도 같음).
 - 재생 표시는 줄(학습지 번호) 단위다. 재생 중인 줄을 색과 ▶ 기호로 표시한다.
 - 묻기 도중 새로고침하면 그 장면의 read 단계로 돌아오고, 이미 답한 묻기는 다시 묻지 않는다.
 - 다시 보기(S4에서 마친 장면을 누름): read 단계만. 묻기 자리에는 내가 고른 답을 보여 주고 고칠 수 없다. "★ 도전"은 남아서 쓴 답을 고칠 수 있고, 낼 때마다 결과 시트로 보낸다.
@@ -501,7 +502,7 @@ private/Reading, news ─┘                                              (priva
 | 23 | 캐릭터 그림 | Travis는 `travis_basic.png`. `travis_relief`, `travis_worried`, `parker`는 `../time-travel-assets-backup/characters/`로 옮김 |
 | 24 | 그림 형식 | 앱은 WebP만 씀. PNG 원본 15개는 `../time-travel-assets-backup/img-originals/`로 옮김 |
 | 25 | 입구 화면 | \[본부\] "신원 확인 완료." 단추 "입장". 웹앱 S0은 스토리보드 그대로 |
-| 26 | 그 밖 | 관찰 ①②③ 모두 고른 뒤 본문 줄이 빛남. 예측·관찰은 바꿀 수 없음. CLAUDE.md의 `order` 설명을 "1~111 전체 순번"으로 고침 |
+| 26 | 그 밖 | 관찰 ①②③ 모두 고른 뒤 본문 줄이 빛남(뒤에 바뀜: 관찰 일지는 확인 문제와 같은 정답·오답 흐름, 3.4). 예측은 바꿀 수 없음. CLAUDE.md의 `order` 설명을 "1~111 전체 순번"으로 고침 |
 
 ### 교사 결정 (13, 27~29)
 

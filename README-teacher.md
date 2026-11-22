@@ -95,7 +95,7 @@ export const RESULT_URL = 'https://script.google.com/macros/s/……/exec';
 | 마친 장면 | 0 ~ 6 |
 | 확인1·2·4·5·6 | `O` = 첫 시도 정답, `X2` = 첫 시도 오답(고른 선지 번호) |
 | 예측①②③ | 고른 선택지. 두 번째 여행은 "D21 문장 / 이유" 또는 "없다" |
-| 관찰①②③ | excited 등 고른 그림 카드 |
+| 관찰①②③ | 처음 고른 그림 카드(excited 등). 정답은 ① excited ② terrified ③ shocked |
 | ★1·2·5·6 | ★ 도전에 쓴 답 (고쳐 내면 바뀜) |
 | 간판 오답 | S9에서 틀린 횟수 |
 | 엔딩 | 수료증까지 갔으면 `O` |

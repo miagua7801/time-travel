@@ -7,6 +7,8 @@ tools/shot-scene.mjs
 tools/shot-step5.mjs
 tools/shot-step6.mjs
 tools/shot-step7.mjs
+tools/shot-step8.mjs
+tools/shot-uline.mjs
 
 # 교과서 본문·출판사 음성·뉴스 원본, 기획 문서. 절대 커밋하지 않는다.
 private/

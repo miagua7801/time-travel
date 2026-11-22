@@ -1,10 +1,10 @@
 // S4 길 지도 (스토리보드 3장, docs/ARCHITECTURE.md 3.2)
 // 칸 상태: 마침(카드 앞면) · 지금(강조) · 잠김(자물쇠). 마친 장면을 누르면 다시 보기.
 // 수료증·단서 수첩 단추는 자리만 두었다. 가는 화면(S10·S11)과 S8은 해당 단계에서 만든다.
-import { el, say, button, img, onLeave, preload, cardSrc } from '../ui.js';
+import { el, say, button, img, onLeave, preload, cardSrc, moodSrc } from '../ui.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
-import { SCENES, MAP_SPOTS } from '../../data/scenes.js';
+import { SCENES, MAP_SPOTS, MOODS } from '../../data/scenes.js';
 import { NOTEBOOK_LIMIT } from '../../data/config.js';
 import { openCards } from '../parts/cardview.js';
 import { clueRule } from '../parts/cluerule.js';
@@ -105,8 +105,8 @@ export function renderMap(root, { go, app }) {
   box.append(stage, el('div', { className: 'map-bar' }, status, bar));
   // 지금 할 장면과 그다음 장면의 그림을 미리 받아 둔다
   if (now) preload(SCENES.filter((s) => s.n === now || s.n === now + 1).map((s) => cardSrc(s.img)));
-  // 엔딩 뒤에는 "수료증" 단추로 갈 수 있으므로 카드 6장과 고른 관찰 일지 그림을 받아 둔다
-  if (rec.flags.ended) preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.values(rec.mood).map((k) => `assets/img/mood/mood_${k}.webp`)]);
+  // 엔딩 뒤에는 "수료증" 단추로 갈 수 있으므로 카드 6장과 관찰 일지 정답 카드를 받아 둔다
+  if (rec.flags.ended) preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer))]);
   root.append(box);
   const target = cells.find((c) => c.state === 'now') || cells.find((c) => c.state === 'done');
   return target ? target.cell : box;

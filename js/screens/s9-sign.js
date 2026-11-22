@@ -6,7 +6,7 @@
 import { el, say, button, img, onLeave, preload, cardSrc, moodSrc } from '../ui.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
-import { SIGN_SPOT, SCENES } from '../../data/scenes.js';
+import { SIGN_SPOT, SCENES, MOODS } from '../../data/scenes.js';
 import { signBox } from '../parts/sign.js';
 import { openCards } from '../parts/cardview.js';
 
@@ -25,8 +25,8 @@ export function renderSign(root, { go, app }) {
   const fixed = new Set(rec.sign.fixed);
 
   const head = say('s9.open', {}, 'h1');
-  // 다음 화면(S10 수료증)의 카드 6장과 고른 관찰 일지 그림을 미리 받아 둔다
-  preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.values(rec.mood).map(moodSrc), 'assets/img/map.webp']);
+  // 다음 화면(S10 수료증)의 카드 6장과 관찰 일지 정답 카드를 미리 받아 둔다
+  preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer)), 'assets/img/map.webp']);
 
   // ----- 간판: 그림을 간판 둘레만 잘라 크게 보인다 -----
   const cropX = SIGN_SPOT.left - MARGIN_X;

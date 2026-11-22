@@ -15,11 +15,12 @@ export const SCENES = [
   { n: 6, card: 'butterfly', img: 'card_6_butterfly', tv: 'N2', echo: 'p3', asks: ['c6', 'm3'], star: 's6', next: 's9' },
 ];
 
-// 관찰 일지. 그림은 assets/img/mood/mood_{key}.webp. flash는 고른 뒤 잠깐 빛나는 줄(학습지 D 번호)
+// 관찰 일지. 그림은 assets/img/mood/mood_{key}.webp. 확인 문제와 같은 흐름으로 정답·오답을 알린다.
+// answer는 정답 카드, evidence는 근거 줄(학습지 D 번호): 정답이면 잠깐 빛나고, 오답이면 밑줄.
 export const MOODS = {
-  m1: { scene: 3, options: ['excited', 'scared', 'sleepy'], flash: 24 },
-  m2: { scene: 4, options: ['happy', 'excited', 'terrified'], flash: 40 },
-  m3: { scene: 6, options: ['happy', 'excited', 'shocked'], flash: 73 },
+  m1: { scene: 3, options: ['excited', 'scared', 'sleepy'], answer: 'excited', evidence: 24 },
+  m2: { scene: 4, options: ['happy', 'excited', 'terrified'], answer: 'terrified', evidence: 40 },
+  m3: { scene: 6, options: ['happy', 'excited', 'shocked'], answer: 'shocked', evidence: 73 },
 };
 
 // 예측. 선택지 a·b·c의 글은 copy.js의 'p1.a' 등

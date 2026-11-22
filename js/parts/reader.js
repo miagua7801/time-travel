@@ -95,10 +95,13 @@ export function makeReader(scene, opts) {
   for (const ln of scene.lines) {
     const id = `ln-${opts.sceneNo}-${ln.d}`;
     const text = el('p', { className: 'line-text', id, lang: 'en' });
+    // 근거 밑줄은 이 span의 아래 테두리로 긋는다. 단어 뜻 단추를 지나도 끊기지 않는다.
+    const inner = el('span', { className: 'line-inner' });
     ln.chunks.forEach((ch, c) => {
-      if (c) text.append(' ');
-      text.append(...chunkNodes(ln.d, c, ch.text));
+      if (c) inner.append(' ');
+      inner.append(...chunkNodes(ln.d, c, ch.text));
     });
+    text.append(inner);
     const play = el('button', { type: 'button', className: 'line-play', textContent: '▷' });
     play.setAttribute('aria-labelledby', id);
     const row = el('div', { className: 'line' + (ln.key ? ' key' : '') + (ln.title ? ' title-line' : '') }, play, text);
@@ -155,6 +158,13 @@ export function makeReader(scene, opts) {
     }
   };
   body.addEventListener('scroll', checkEnd, { passive: true });
+  // Tab으로 줄 안의 단추에 오면 단추만이 아니라 그 줄 전체가 보이게 굴린다.
+  // 그러지 않으면 마지막 줄 아래가 조금 가려진 채 멈춰 키보드로는 "다 읽었다"가 열리지 않을 때가 있다.
+  body.addEventListener('focusin', (e) => {
+    const row = e.target instanceof Element ? e.target.closest('.line') : null;
+    if (row && body.contains(row)) row.scrollIntoView({ block: 'nearest' });
+    checkEnd();
+  });
 
   const onDocClick = (e) => { if (openGloss && !(e.target instanceof Element && e.target.closest('.vocab-wrap'))) closeGloss(); };
   const onDocKey = (e) => { if (e.key === 'Escape') closeGloss(); };

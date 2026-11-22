@@ -12,7 +12,6 @@ export const COPY = {
   'check.wrong1': { voice: 'travis', text: '다시 봐. 이 문장이야.' },
   'check.wrong2': { voice: 'travis', text: '답은 이거야. 문장을 한 번 더 읽고 가자.' },
   'predict.saved': { voice: 'travis', text: '네 예측, 기록했다.' },
-  'mood.saved': { voice: 'narration', text: '관찰 일지에 기록했다.' },
   'card.got': { voice: 'narration', text: '카드를 얻었다: {card}' },
   'star.saved': { voice: 'hq', text: '도전 기록 접수.' },
 

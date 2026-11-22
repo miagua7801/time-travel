@@ -566,12 +566,13 @@ button.trip.dim { opacity: 0.45; }
 .picking .clue { border: 2px solid var(--accent); border-radius: var(--radius); }
 .line-text { margin: 0; font-size: 20px; line-height: 1.6; cursor: pointer; }
 .title-line .line-text { font-size: 26px; font-weight: 700; }
-.line.evidence .line-text {
-  text-decoration: underline;
-  text-decoration-thickness: 3px;
-  text-underline-offset: 6px;
-  text-decoration-color: var(--accent);
+/* 근거 밑줄: 글자 밑줄(text-decoration)은 단어 뜻 단추(inline-block)에서 끊긴다.
+   문장 전체를 감싼 span의 아래 테두리로 그어 한 줄로 잇고, 단추의 점선은 감춘다. */
+.line.evidence .line-inner {
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 3px;
 }
+.line.evidence .vocab { border-bottom-color: transparent; }
 .line-play, .clue {
   min-height: 32px;
   width: 32px;

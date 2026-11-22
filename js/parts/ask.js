@@ -85,14 +85,16 @@ function moodRow(mood, onPick) {
   })), onPick, meaningButton(texts));
 }
 
-// ---------- 확인 문제 ----------
-// 첫 오답: 근거 줄 밑줄 + "다시 고르기". 둘째 오답: 정답과 밑줄을 보인 채 단추를 눌러 넘어감. 기록은 첫 시도만.
-//   onFirst(pick, right)  첫 시도를 기록   onEvidence(d)  근거 줄 밑줄   onDone()  다음으로
-export function checkAsk(id, check, { onFirst, onEvidence, onDone }) {
+// ---------- 정답이 있는 묻기: 확인 문제와 관찰 일지가 함께 쓴다 ----------
+// 정답: "맞아." (+ onRight). 첫 오답: 근거 줄 밑줄 + "다시 고르기". 둘째 오답: 정답과 밑줄을 보인 채 단추를 눌러 넘어감.
+// 기록은 첫 시도만.
+//   makeRow(onPick)  선지 줄   answer  정답 번호   evidence  근거 줄 D 번호
+//   onFirst(pick, right)  첫 시도를 기록   onRight()  맞혔을 때   onEvidence(d)  근거 줄 밑줄   onDone()  다음으로
+function judgedAsk(id, className, makeRow, answer, evidence, { onFirst, onRight, onEvidence, onDone }) {
   const t = promptBox(`ask.${id}`);
   let tries = 0;
   let open = true;
-  const row = checkRow(check, pick);
+  const row = makeRow((i) => pick(i));
   const retry = button('btn.retry', () => {
     retry.hidden = true;
     t.set(`ask.${id}`);
@@ -110,46 +112,58 @@ export function checkAsk(id, check, { onFirst, onEvidence, onDone }) {
     if (!open) return;
     open = false;
     tries++;
-    const right = i === check.answer;
+    const right = i === answer;
     if (tries === 1) onFirst(i, right);
     row.lock(true);
     if (right) {
       row.mark(i, 'right');
       t.set('check.right');
+      if (onRight) onRight();
       later(HOLD, onDone);
     } else if (tries === 1) {
       row.mark(i, 'wrong');
       t.set('check.wrong1');
-      onEvidence(check.evidence);
+      onEvidence(evidence);
       retry.hidden = false;
       retry.focus();
     } else {
       row.mark(i, 'wrong');
-      row.mark(check.answer, 'right');
+      row.mark(answer, 'right');
       t.set('check.wrong2');
-      onEvidence(check.evidence);
+      onEvidence(evidence);
       goOn.hidden = false;
       goOn.focus();
     }
   }
 
   return {
-    el: el('div', { className: 'ask ask-check' }, t.box, el('div', { className: 'ask-line' }, row.el, retry, goOn)),
+    el: el('div', { className: `ask ${className}` }, t.box, el('div', { className: 'ask-line' }, row.el, retry, goOn)),
     focus: t.text,
     key(n) { if (open && row.opts[n - 1] && !row.opts[n - 1].b.disabled) pick(n - 1); },
   };
 }
 
-export function checkReview(id, check, saved) {
+// 다시 보기: 처음 고른 것 + (틀렸으면 ✕) + 정답 ✓
+function judgedReview(id, className, row, pick, answer) {
   const t = promptBox(`ask.${id}`);
   t.text.removeAttribute('role');
-  const row = checkRow(check, null);
   row.lock(true);
-  row.opts[saved.pick].b.setAttribute('aria-pressed', 'true');
-  row.opts[saved.pick].b.classList.add('is-mine');
-  if (saved.pick !== check.answer) row.mark(saved.pick, 'wrong');
-  row.mark(check.answer, 'right');
-  return el('div', { className: 'ask ask-check ask-review' }, t.box, el('div', { className: 'ask-line' }, row.el));
+  if (row.opts[pick]) {
+    row.opts[pick].b.setAttribute('aria-pressed', 'true');
+    row.opts[pick].b.classList.add('is-mine');
+    if (pick !== answer) row.mark(pick, 'wrong');
+  }
+  row.mark(answer, 'right');
+  return el('div', { className: `ask ${className} ask-review` }, t.box, el('div', { className: 'ask-line' }, row.el));
+}
+
+// ---------- 확인 문제 ----------
+export function checkAsk(id, check, handlers) {
+  return judgedAsk(id, 'ask-check', (onPick) => checkRow(check, onPick), check.answer, check.evidence, handlers);
+}
+
+export function checkReview(id, check, saved) {
+  return judgedReview(id, 'ask-check', checkRow(check, null), saved.pick, check.answer);
 }
 
 // ---------- 예측 (첫 여행): 한국어 선택지 3개. 한 번 고르면 바꿀 수 없다 ----------
@@ -181,33 +195,14 @@ export function predictReview(id, saved) {
   return el('div', { className: 'ask ask-predict ask-review' }, t.box, el('div', { className: 'ask-line' }, row.el));
 }
 
-// ---------- 관찰 일지: 그림 카드 3장. 고르면 본문 줄이 잠깐 빛나고, 맞다 틀리다는 말하지 않는다 ----------
-export function moodAsk(id, mood, { onPick, onDone }) {
-  const t = promptBox(`ask.${id}`);
-  let open = true;
-  const row = moodRow(mood, (i) => {
-    if (!open) return;
-    open = false;
-    onPick(mood.options[i]);
-    row.lock(true);
-    row.mine(i);
-    t.set('mood.saved');
-    later(HOLD + 500, onDone);
-  });
-  return {
-    el: el('div', { className: 'ask ask-mood' }, t.box, el('div', { className: 'ask-line' }, row.el)),
-    focus: t.text,
-    key(n) { if (open && row.opts[n - 1]) row.opts[n - 1].b.click(); },
-  };
+// ---------- 관찰 일지: 그림 카드 3장. 확인 문제와 같은 흐름 (정답이면 근거 줄이 잠깐 빛남) ----------
+export function moodAsk(id, mood, handlers) {
+  return judgedAsk(id, 'ask-mood', (onPick) => moodRow(mood, onPick), mood.options.indexOf(mood.answer), mood.evidence, handlers);
 }
 
+// saved: 처음 고른 카드 이름
 export function moodReview(id, mood, saved) {
-  const t = promptBox(`ask.${id}`);
-  t.text.removeAttribute('role');
-  const row = moodRow(mood, null);
-  row.lock(true);
-  row.mine(mood.options.indexOf(saved));
-  return el('div', { className: 'ask ask-mood ask-review' }, t.box, el('div', { className: 'ask-line' }, row.el));
+  return judgedReview(id, 'ask-mood', moodRow(mood, null), mood.options.indexOf(saved), mood.options.indexOf(mood.answer));
 }
 
 // ---------- 두 번째 여행의 예측 자리: 본문의 ☆로 문장 하나를 고르거나 "없다" → 이유 한 줄(비워도 됨) ----------

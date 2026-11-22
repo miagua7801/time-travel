@@ -52,11 +52,12 @@ export function renderCertificate(root, { go, app }) {
   }
   const predicts = rows.length ? el('table', { className: 'cert-predicts' }, el('tbody', {}, ...rows)) : null;
 
-  // 관찰 일지: 고른 그림 카드가 화살표로 이어진다
+  // 관찰 일지: 정답 카드가 화살표로 이어진다. 처음에 다른 카드를 고른 기록(예전 방식 포함)이어도 정답 카드를 보인다.
+  // 기록이 없는 칸("장면 5부터"로 온 학생의 ①②)은 숨긴다.
   const moods = [];
   for (const id of ['m1', 'm2', 'm3']) {
-    const key = rec.mood[id];
-    if (!key) continue;
+    if (!rec.mood[id]) continue;
+    const key = MOODS[id].answer;
     if (moods.length) moods.push(el('li', { className: 'cert-arrow', textContent: '→' }));
     moods.push(el('li', { className: 'cert-mood' },
       img(`assets/img/mood/mood_${key}.webp`, 'cert-mood-img', ''),
