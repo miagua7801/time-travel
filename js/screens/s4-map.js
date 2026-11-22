@@ -104,6 +104,8 @@ export function renderMap(root, { go, app }) {
     }, 'small'));
   }
 
+  // 되감기에서 단서를 보고한 학생: 상태 칸에 [본부] 완료 문구 한 줄
+  if (rec.flags.ended && rec.flags.reported) status.replaceChildren(say('mission.allDone'));
   box.append(stage, el('div', { className: 'map-bar' }, status, bar));
   // 지금 할 장면과 그다음 장면의 그림을 미리 받아 둔다
   if (now) preload(SCENES.filter((s) => s.n === now || s.n === now + 1).map((s) => cardSrc(s.img)));

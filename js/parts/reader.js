@@ -17,6 +17,7 @@ export function makeReader(scene, opts) {
     mode: 'inline',
     text: () => `★ ${opts.starCount()}/${opts.starLimit}`,
     label: () => `${copy('notebook.name')} ${opts.starCount()}/${opts.starLimit}`,
+    onClick: opts.onCount, // 되감기에서 수첩이 찼을 때는 단서 수첩으로 (false면 말풍선)
   }) : null;
   const head = el('div', { className: 'reader-head' }, listen, note, rule ? rule.wrap : null);
 

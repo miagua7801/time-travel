@@ -45,5 +45,8 @@ export const NEXT_DELAY_MS = 1000;
 // 장비 점검 7단계("이전 장면" 안내)를 누르지 않아도 지우는 시간(밀리초). 선지를 고르면 바로 지운다.
 export const GUIDE_HINT_MS = 6000;
 
+// 장비 점검 단서 2단계(두 번째 여행): ★ n/5를 가리킨 뒤 저절로 다음 단계로 가기까지(밀리초)
+export const GUIDE_CLUE_MS = 6000;
+
 // 되감기(S11) 설명(첫 여행만): Travis 네 줄이 한 줄씩 나오는 간격(밀리초). 마지막 줄 뒤에 "임무 시작"
 export const REWIND_LINE_MS = 2500;

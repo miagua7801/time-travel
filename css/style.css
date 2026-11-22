@@ -1021,3 +1021,26 @@ button.clue-count { min-height: 44px; padding: 4px var(--s2); font-weight: 700; 
 /* 두 번째 여행: '내 예측' 칸에 고른 영어 문장이 들어가 길다. 질문 칸을 줄바꿈해 문장 칸을 넓힌다 */
 .cert[data-trip="2"] .cert-predicts tbody th { white-space: normal; width: 9.5em; }
 .cert[data-trip="2"] .cert-real { width: 9em; }
+
+/* ---------- 되감기: 임무 목록, 장면 넘기기, 수첩 안내, 완료 상자 ---------- */
+.tasks { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--s3); font-size: 18px; }
+.task { display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--muted); }
+.task-mark { font-size: 20px; line-height: 1; color: var(--text); }
+.task.is-done { color: var(--text); font-weight: 700; }
+.task.is-done .task-mark { color: var(--ok); }
+/* 장면 화면: 맨 위 띠 가운데 */
+.scene-top .tasks { flex: 1; justify-content: center; }
+/* 되감기 길 지도: 그림 왼쪽 위 */
+.tasks.on-map { position: absolute; top: var(--s2); left: var(--s2); z-index: 2; padding: 6px var(--s2); border-radius: var(--radius); background: var(--bg); }
+/* 되감기 장면 아래: 이전 장면 · (길 지도, 다음 장면 또는 단서 수첩) */
+.scene[data-mode="rewind"] .ask-panel { min-height: 0; padding-bottom: var(--s1); }
+.rewind-nav { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.rewind-nav-right { display: flex; gap: var(--s2); }
+/* 단서 수첩 */
+.nb-list { overflow-y: auto; }
+.nb-ask { margin: 0; }
+.nb-ask[hidden] { display: none; }
+.nb-done { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s3); border-radius: var(--radius); background: var(--surface); }
+.nb-done[hidden] { display: none; }
+.nb-done .say-hq { flex: 1; margin: 0; }
+.nb-done .tasks { flex-direction: column; gap: 2px; }

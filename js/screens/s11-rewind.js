@@ -4,6 +4,7 @@
 import { el, say, button, img, onLeave, later } from '../ui.js';
 import { clueRule } from '../parts/cluerule.js';
 import { makeGuide } from '../parts/guide.js';
+import { missionList } from '../parts/tasks.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
@@ -97,7 +98,9 @@ function renderRewindMap(root, { go, app }) {
   });
   const mapImg = img('assets/img/map.webp', 'map-img', '');
   mapImg.decoding = 'sync';
-  const stage = el('div', { className: 'map-stage media' }, mapImg, el('ol', { className: 'map-cells' }, ...cells.map((c) => c.parentElement)));
+  const tasks = missionList(rec);
+  tasks.el.classList.add('on-map');
+  const stage = el('div', { className: 'map-stage media' }, mapImg, el('ol', { className: 'map-cells' }, ...cells.map((c) => c.parentElement)), tasks.el);
 
   const rule = clueRule({
     mode: 'float',
@@ -141,6 +144,23 @@ function renderNotebook(root, { go, app, back }) {
   const count = rule.button;
   const list = el('ol', { className: 'nb-list' });
   const status = el('div', { className: 'status nb-status', role: 'status' });
+  // 단서가 하나 이상이고 보고 전이면 위쪽에 [본부] 안내
+  const ask = say('s11.writeAndReport');
+  ask.classList.add('nb-ask');
+  // 보고 뒤 완료 상자 (되감기가 열린 뒤에만): 임무 목록 모두 ✓, [본부] 완료 문구, "길 지도"(S4)·"수료증". 잠금이 아니다.
+  const tasks = missionList(rec);
+  const doneBox = el('div', { className: 'nb-done' },
+    tasks.el,
+    say('mission.allDone'),
+    el('div', { className: 'btn-row' }, button('btn.map', () => go('s4'), 'primary'), button('btn.certificate', () => go('s10'), '')));
+  doneBox.setAttribute('role', 'status');
+  const paintState = () => {
+    ask.hidden = !(rec.notes.length > 0 && !rec.flags.reported);
+    const done = Boolean(rec.flags.reported && rec.flags.ended);
+    doneBox.hidden = !done;
+    map.hidden = done; // 완료 상자의 "길 지도"(S4)와 겹치지 않게, 되감기 길 지도로 가는 단추는 감춘다
+    tasks.refresh();
+  };
 
   const save = () => { saveRecord(rec); };
   function draw() {
@@ -171,6 +191,7 @@ function renderNotebook(root, { go, app, back }) {
       return li;
     }));
     rule.refresh();
+    paintState();
   }
 
   const report = button('btn.report', () => {
@@ -180,6 +201,7 @@ function renderNotebook(root, { go, app, back }) {
     queueResult(rec);
     status.replaceChildren(say('s11.reported'));
     box.dataset.state = 'reported';
+    paintState();
   }, 'primary');
   const map = button('btn.map', () => go(back === 'rewind' ? 's11' : 's4'), '');
 
@@ -187,8 +209,10 @@ function renderNotebook(root, { go, app, back }) {
   const box = el('section', { className: 'notebook-view' },
     el('header', { className: 'nb-head' }, head, rule.wrap),
     rule.panel,
+    ask,
     list,
-    el('div', { className: 'nb-foot' }, status, el('div', { className: 'btn-row' }, report, map)));
+    el('div', { className: 'nb-foot' }, status, el('div', { className: 'btn-row' }, report, map)),
+    doneBox);
   box.dataset.state = 'notebook';
   root.append(box);
   return head;

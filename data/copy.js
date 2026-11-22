@@ -45,6 +45,7 @@ export const COPY = {
   'btn.nowScene': { voice: 'button', text: '지금 장면' },
   'btn.howto': { voice: 'button', text: '사용법' },
   'btn.news': { voice: 'button', text: '뉴스' },
+  'btn.notebook': { voice: 'button', text: '단서 수첩' },
   'btn.wipe': { voice: 'button', text: '지움' },
   'btn.cancel': { voice: 'button', text: '취소' },
 
@@ -113,6 +114,9 @@ export const COPY = {
   'guide.1': { voice: 'hq', text: '이어 듣기를 눌러 장면을 들어 보라.' },
   'guide.2': { voice: 'hq', text: '문장 하나를 눌러 그 문장만 들어 보라.' },
   'guide.3': { voice: 'hq', text: '점선 단어를 눌러 뜻을 확인하라.' },
+  // 두 번째 여행만: 3단계 뒤 단서 1·2단계
+  'guide.c1': { voice: 'hq', text: '결말을 알려 주는 문장이면 ☆를 눌러라.' },
+  'guide.c2': { voice: 'hq', text: '단서는 수첩에 모인다. 다섯 칸까지 담아라.' },
   'guide.4': { voice: 'hq', text: 'TV를 눌러 뉴스를 들어 보라.' },
   'guide.5': { voice: 'hq', text: "다 읽었으면 '다 읽었다'를 눌러라." },
   'guide.6': { voice: 'hq', text: "모르는 선지는 '뜻 보기'를 눌러라." },
@@ -204,6 +208,12 @@ export const COPY = {
   's11.why2': { voice: 'travis', text: '아침에 하늘이 흐렸다. 오후에 비가 왔다.' },
   's11.why3': { voice: 'travis', text: '흐린 하늘이 비를 미리 알려 줬지. 그런 문장이 단서야.' },
   's11.why4': { voice: 'travis', text: '장면 1~5에서 단서를 찾아 ☆를 눌러.' },
+  // 되감기 임무 목록 (길 지도와 장면 위쪽). 마친 임무는 ☐ 대신 ✓
+  's11.task1': { voice: 'label', text: '단서 담기 ({n}/{max})' },
+  's11.task2': { voice: 'label', text: '단서 수첩 보고' },
+  's11.writeAndReport': { voice: 'hq', text: '단서마다 나중에 일어난 일을 쓰고 보고하라.' },
+  // 보고 뒤 완료 상자와 S4 상태 칸
+  'mission.allDone': { voice: 'hq', text: '모든 임무 완료. 견습 가이드, 수고했다.' },
   // 되감기 길 지도의 장면 6 칸 (보고 전)
   's11.scene6Locked': { voice: 'hq', text: '단서는 장면 1~5에서 찾아라. 보고 뒤에 열린다.' },
   's11.added': { voice: 'narration', text: '단서 수첩에 담았다.' },

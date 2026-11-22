@@ -18,10 +18,13 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Tab' || e.key === '
 document.addEventListener('pointerdown', () => { keyboard = false; }, true);
 
 // steps: [{ no, copy, target() → 가리킬 단추, hole() → 밝게 남길 곳(없으면 target), focus() → 포커스를 줄 요소(없으면 target),
-//           skip() → true면 건너뜀, sides → 문구를 놓아 볼 자리 순서 ('right' | 'left' | 'below' | 'above') }]
+//           skip() → true면 건너뜀, sides → 문구를 놓아 볼 자리 순서 ('right' | 'left' | 'below' | 'above'),
+//           id → 화면에 적는 단계 이름(없으면 no), auto → 이 시간(밀리초)이 지나면 저절로 다음 단계, onShow() → 이 단계가 나올 때 }]
 // skip: true면 문구 아래에 "건너뛰기" (길 지도의 "사용법"으로 다시 볼 때)
 // onEnd(finished): 끝났을 때. 마지막 단계까지 갔으면 true, 건너뛰기·화면 떠남이면 false
-export function makeGuide(host, { steps, skip = false, onEnd }) {
+// onStep(step): 단계가 바뀔 때마다 (예: 열려 있는 단어 뜻 말풍선을 닫는다)
+// 단계의 also() → 테두리 없이 함께 밝게 남길 곳들 (예: 단서 2단계의 단서 기준 말풍선)
+export function makeGuide(host, { steps, skip = false, onEnd, onStep }) {
   // 덮개: 어두운 막(가운데 구멍) + 흰 점선 테두리 + 흰 점선 곡선 + 끝점
   const veil = svgEl('path', { class: 'guide-veil-fill', 'fill-rule': 'evenodd' });
   const ring = svgEl('rect', { class: 'guide-ring', rx: 12, ry: 12 });
@@ -37,6 +40,7 @@ export function makeGuide(host, { steps, skip = false, onEnd }) {
   let at = -1;
   let over = false;
   let raf = 0;
+  let autoTimer = 0;
 
   const shown = (t) => Boolean(t && t.isConnected && t.getClientRects().length);
 
@@ -47,8 +51,12 @@ export function makeGuide(host, { steps, skip = false, onEnd }) {
     const s = steps[i];
     text.textContent = line(s.copy);
     text.dataset.copy = s.copy;
-    host.dataset.guide = String(s.no);
+    host.dataset.guide = s.id || String(s.no);
     if (!cover.isConnected) host.append(cover, tip);
+    clearTimeout(autoTimer);
+    if (s.auto) autoTimer = setTimeout(() => { if (!over && at === i) begin(i + 1); }, s.auto);
+    if (onStep) onStep(s);
+    if (s.onShow) s.onShow();
     const t = s.target();
     if (t && t.closest('.reader-body')) t.scrollIntoView({ block: 'nearest' });
     if (keyboard) {
@@ -90,7 +98,9 @@ export function makeGuide(host, { steps, skip = false, onEnd }) {
     cover.classList.toggle('in-light', holeEl !== t);
     const rad = 12;
     const roundRect = (b) => `M${b.x + rad},${b.y} H${b.x + b.w - rad} Q${b.x + b.w},${b.y} ${b.x + b.w},${b.y + rad} V${b.y + b.h - rad} Q${b.x + b.w},${b.y + b.h} ${b.x + b.w - rad},${b.y + b.h} H${b.x + rad} Q${b.x},${b.y + b.h} ${b.x},${b.y + b.h - rad} V${b.y + rad} Q${b.x},${b.y} ${b.x + rad},${b.y} Z`;
-    veil.setAttribute('d', `M0,0 H${W} V${H} H0 Z ${roundRect(h)}`);
+    // 함께 밝게 남길 곳 (구멍끼리 겹치지 않게 여백을 작게)
+    const extra = s.also ? s.also().filter(shown).map((e) => roundRect(box(e, 3))) : [];
+    veil.setAttribute('d', `M0,0 H${W} V${H} H0 Z ${roundRect(h)} ${extra.join(' ')}`);
     // 흰 점선 테두리는 단추에
     const g = box(t, pad);
     Object.entries({ x: g.x, y: g.y, width: g.w, height: g.h }).forEach(([k, v]) => ring.setAttribute(k, v));
@@ -160,6 +170,7 @@ export function makeGuide(host, { steps, skip = false, onEnd }) {
     if (over) return;
     over = true;
     cancelAnimationFrame(raf);
+    clearTimeout(autoTimer);
     cover.remove();
     tip.remove();
     delete host.dataset.guide;

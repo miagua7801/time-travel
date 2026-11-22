@@ -3,6 +3,7 @@
 //   mode 'inline'  말풍선이 단추 아래 줄에 끼어 들어가 아래 내용을 밀어낸다 (본문을 가리지 않음). 놓을 곳은 부르는 쪽이 정한다(rule.panel).
 //   mode 'float'   말풍선이 단추 위에 뜬다 (길 지도 아래 띠처럼 위에 글이 없는 곳)
 //   onClick        누르면 다른 일을 할 때(길 지도의 수첩 단추 → 단서 수첩). 이때는 가리키기·포커스로만 연다.
+//                  false를 돌려주면 그때만 평소처럼 말풍선을 열고 닫는다.
 import { el, say } from '../ui.js';
 import { line } from '../text.js';
 
@@ -36,7 +37,7 @@ export function clueRule({ mode = 'inline', text, label, onClick } = {}) {
   button.addEventListener('focus', () => { focus = true; sync(); });
   button.addEventListener('blur', () => { focus = false; sticky = false; sync(); });
   button.addEventListener('click', () => {
-    if (onClick) { onClick(); return; }
+    if (onClick && onClick() !== false) return;
     timed = false;
     sticky = !sticky;
     if (!sticky) { hover = false; focus = false; } // 다시 누르면 닫는다
