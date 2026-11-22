@@ -9,7 +9,7 @@ import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
 import { queueResult } from '../send.js';
 import { SCENES, MAP_SPOTS } from '../../data/scenes.js';
-import { NOTEBOOK_LIMIT } from '../../data/config.js';
+import { NOTEBOOK_LIMIT, REWIND_LINE_MS } from '../../data/config.js';
 
 // 줄 번호 → 장면 번호와 문장
 function findLine(d) {
@@ -27,7 +27,44 @@ export function renderRewind(root, { go, app, opts }) {
   const rec = app.rec;
   const open = rec.flags.ended; // 되감기가 열렸는가
   if (opts.view === 'notebook' || !open) return renderNotebook(root, { go, app, back: open ? 'rewind' : 's4' });
+  // 첫 여행은 처음 들어올 때 설명을 먼저 본다 ("임무 시작"을 누르기 전에 끊기면 다음에 다시 본다)
+  if (rec.trip === 1 && !rec.flags.why) return renderWhy(root, { go, app });
   return renderRewindMap(root, { go, app });
+}
+
+// 되감기 설명 (첫 여행만): [본부] 문구 → [Travis] 네 줄이 한 줄씩 → "임무 시작" → 길 지도와 단서 기준 말풍선
+function renderWhy(root, { go, app }) {
+  const rec = app.rec;
+  const head = say('s11.open', {}, 'h1');
+  const face = say('s11.why1').querySelector('.face'); // Travis 얼굴
+  const list = el('ol', { className: 'why-lines' });
+  list.setAttribute('aria-live', 'polite');
+  const start = button('btn.missionStart', () => {
+    rec.flags.why = true;
+    saveRecord(rec);
+    go('s11');
+  }, 'primary');
+  start.hidden = true;
+  const box = el('section', { className: 'rewind-why' }, head, el('div', { className: 'say-travis why-travis' }, face, list), el('div', { className: 'btn-row' }, start));
+  box.dataset.state = 'why';
+  root.append(box);
+  const ids = ['s11.why1', 's11.why2', 's11.why3', 's11.why4'];
+  const show = (i) => {
+    if (i >= ids.length) {
+      start.hidden = false;
+      box.dataset.state = 'ready';
+      const a = document.activeElement;
+      if (!a || a === document.body || a === head) start.focus({ preventScroll: true });
+      return;
+    }
+    const li = el('li', { className: 'say-text', textContent: line(ids[i]) });
+    li.dataset.copy = ids[i];
+    list.append(li);
+    box.dataset.lines = String(i + 1);
+    later(i + 1 < ids.length ? REWIND_LINE_MS : 1000, () => show(i + 1));
+  };
+  later(1000, () => show(0));
+  return head;
 }
 
 // 되감기 길 지도: 장면 1~5 칸이 빛나고 누르면 그 장면을 ☆와 함께 다시 본다

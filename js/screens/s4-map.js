@@ -108,7 +108,7 @@ export function renderMap(root, { go, app }) {
   // 지금 할 장면과 그다음 장면의 그림을 미리 받아 둔다
   if (now) preload(SCENES.filter((s) => s.n === now || s.n === now + 1).map((s) => cardSrc(s.img)));
   // 엔딩 뒤에는 "수료증" 단추로 갈 수 있으므로 카드 6장과 관찰 일지 정답 카드를 받아 둔다
-  if (rec.flags.ended) preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer))]);
+  if (rec.flags.ended) preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer)), 'assets/img/butterfly_rest.webp']);
   root.append(box);
   const target = cells.find((c) => c.state === 'now') || cells.find((c) => c.state === 'done');
   return target ? target.cell : box;

@@ -34,8 +34,9 @@ export function newRecord() {
   return {
     v: 2,
     cls: null, num: null, trip: null, day: null,
-    // guide: 장비 점검 1~6단계를 봤다 · guide7: 장면 2의 7단계를 봤다
-    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false, rule: false, guide: false, guide7: false },
+    // guide: 장비 점검 1~6단계를 봤다 · guide7: 장면 2의 7단계를 봤다 · why: 되감기 설명을 보고 "임무 시작"을 눌렀다
+    flags: { video: false, s6: false, unlocked: false, ended: false, reported: false, from5: false, rule: false, guide: false, guide7: false, why: false },
+    endDay: null, // 처음 수료한 날 'YYYY-MM-DD'. 수료증의 날짜
     done: [],
     checks: {}, predict: {}, picks: {}, mood: {}, star: {},
     sign: { fixed: [], wrong: 0 },
@@ -80,7 +81,9 @@ export function resumeTarget(rec) {
   const done = new Set(rec.done);
   const first4 = [1, 2, 3, 4].every((n) => done.has(n));
   if (!hasReport(rec)) return rec.flags.video ? 's2' : 's1';
-  if (rec.flags.ended) return 's4';
+  // 되감기는 수료증 다음에 반드시 하는 단계다. 단서를 보고하기 전에 끊겼으면 되감기(S11)로 돌아간다
+  // (첫 여행에서 설명을 아직 못 봤으면 설명부터). 보고한 뒤에는 S4.
+  if (rec.flags.ended) return rec.flags.reported ? 's4' : 's11';
   if (rec.flags.unlocked && done.has(6)) return 's9';
   if (rec.flags.unlocked) return 's4';
   if (done.has(4) && !rec.flags.s6) return 's6';

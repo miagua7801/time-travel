@@ -18,6 +18,7 @@
   --bad: #b91c1c;
   --focus: #f97316;
   --mark: #fef3c7; /* 재생 중인 줄 */
+  --line: #d1d5db;  /* 표와 목록의 옅은 구분선 */
   --scrim: rgba(17, 24, 39, 0.72); /* 장비 점검: 화면을 어둡게 덮는 막 (--text 색) */
 
   --s1: 8px;
@@ -875,46 +876,89 @@ button.sign-word.fixed { color: var(--text); border-bottom-color: transparent; o
 .s9-opt.is-wrong { opacity: 0.45; } /* 틀린 선지: ✕ + 흐림 (결정 6) */
 .s9-side { flex: none; }
 
-/* ---------- S10 수료증 ---------- */
+/* ---------- S10 수료증 (시안 B) ---------- */
 .cert {
+  position: relative;
   flex: none;
   height: calc(100vh - var(--notice-h));
-  padding: var(--s2) var(--s4);
+  padding: 20px var(--s4) 10px;
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
+  gap: 12px;
   overflow: hidden;
 }
-.cert h1.say { font-size: 24px; }
-.cert-title { margin: 0; display: flex; gap: var(--s3); align-items: baseline; font-size: 22px; font-weight: 700; }
-.cert-who { color: var(--accent); }
-.cert-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
-.cert-cards .card { width: 100%; max-width: 168px; margin: 0 auto; display: block; }
-.cert-cards .card-back { font-size: 13px; line-height: 1.3; }
-.cert-cards .card-thumb { display: none; }
-/* 기록 칸: 답이 길어도 아래 단추를 덮지 않게 이 칸 안에서만 굴린다 */
-.cert-lower { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s2); overflow-y: auto; padding-right: var(--s1); }
-.cert-lower > * { flex: none; }
-.cert > .btn-row { flex: none; }
-.cert-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--s3); align-items: start; }
-.cert-grid.single { grid-template-columns: minmax(0, 1fr); }
-.cert-predicts { border-collapse: collapse; width: 100%; }
-.cert-predicts th, .cert-predicts td { padding: 4px var(--s1); text-align: left; vertical-align: top; border-bottom: 1px solid var(--surface); }
-.cert-predicts th { font-weight: 400; color: var(--muted); white-space: nowrap; }
-.cert-mine { font-weight: 700; }
-.cert-mine[lang="en"] { font-size: 18px; }
-.cert-moods { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: var(--s1); }
+.cert h1.say { font-size: 22px; }
+.cert-body { flex: 1; min-height: 0; display: flex; gap: 28px; }
+/* 왼쪽: 이중 테두리 증서 */
+.cert-paper {
+  flex: none;
+  width: 470px;
+  min-height: 0;
+  padding: 18px var(--s3);
+  border: 6px double var(--accent);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+}
+.cert-butterfly { width: 64px; height: 64px; object-fit: contain; }
+.cert-brand { font-size: 16px; font-weight: 700; letter-spacing: 6px; color: var(--accent); }
+.cert-name { margin: 0; font-size: 34px; font-weight: 900; line-height: 1.2; letter-spacing: 2px; }
+.cert-who { margin: 0; font-size: 26px; font-weight: 700; color: var(--accent); }
+.cert-passed { margin: 0; font-size: 18px; color: var(--muted); text-align: center; }
+.cert-cards { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 96px); gap: 10px; }
+.cert-card { display: block; width: 96px; height: 96px; min-height: 0; padding: 0; overflow: hidden; border: 2px solid var(--text); border-radius: var(--radius); background: var(--bg); }
+.cert-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cert-sign { margin: auto 0 0; font-size: 18px; font-weight: 700; }
+/* 오른쪽: 훈련 기록. 답이 길면 이 칸 안에서만 굴러가고 아래 단추를 덮지 않는다 */
+.cert-record { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px; }
+.cert-record > * { flex: none; }
+.cert-record-title { margin: 0; font-size: 22px; font-weight: 700; padding-bottom: 6px; border-bottom: 2px solid var(--text); }
+.cert-box { padding: 14px 20px; border-radius: var(--radius); background: var(--surface); display: flex; flex-direction: column; gap: var(--s1); }
+.cert-box h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--accent); }
+.cert-predicts { width: 100%; border-collapse: collapse; font-size: 18px; }
+.cert-predicts thead th { padding: 0 12px 4px 0; font-size: 16px; font-weight: 400; color: var(--muted); text-align: left; }
+.cert-predicts tbody tr { border-top: 1px solid var(--line); }
+.cert-predicts tbody th { padding: 6px 12px 6px 0; font-weight: 400; color: var(--muted); text-align: left; vertical-align: top; white-space: nowrap; }
+.cert-mine { padding: 6px 12px; font-weight: 700; white-space: nowrap; vertical-align: top; }
+.cert-mine[lang="en"] { white-space: normal; }
+.cert-real { padding: 6px 0 6px 12px; vertical-align: top; }
+.cert-lower { flex: 1 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.cert-lower.single { grid-template-columns: minmax(0, 1fr); }
+.cert-moods { list-style: none; margin: 0; padding: 0; flex-grow: 1; display: flex; align-items: center; justify-content: space-between; }
+.cert-mood-box.single-mood .cert-moods { justify-content: center; }
 .cert-mood { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.cert-mood-img { width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--text); border-radius: var(--radius); }
-.cert-mood-word { font-weight: 700; }
+.cert-mood-img { width: 84px; height: 84px; object-fit: cover; border: 2px solid var(--text); border-radius: var(--radius); background: var(--bg); }
+.cert-mood-word { margin-top: 4px; font-size: 20px; font-weight: 700; }
+.cert-mood-ko { font-size: 18px; }
 .cert-mood-scene { font-size: 16px; color: var(--muted); }
-.cert-arrow { font-size: 28px; }
-.cert-stars { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px var(--s3); }
-.cert-star { display: flex; gap: var(--s2); }
-.cert-star dt { flex: none; color: var(--muted); }
+.cert-arrow { padding-bottom: 52px; font-size: 24px; color: var(--muted); }
+.cert-star-count { font-size: 16px; font-weight: 400; color: var(--muted); }
+.cert-stars { margin: 0; display: flex; flex-direction: column; }
+.cert-star { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.cert-star dt { padding-top: 2px; font-size: 16px; color: var(--muted); }
 .cert-star dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.cert-buttons { flex: none; justify-content: flex-end; }
 
 /* ---------- S11 되감기·단서 수첩 ---------- */
+/* 되감기 설명 (첫 여행만): 본부 문구 → Travis 네 줄이 한 줄씩 → "임무 시작" */
+.rewind-why {
+  flex: none;
+  height: calc(100vh - var(--notice-h));
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--s6) var(--s4) var(--s4);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s4);
+}
+.rewind-why h1.say { margin: 0; font-size: 26px; }
+.why-travis { align-items: flex-start; gap: var(--s3); }
+.why-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); min-height: 236px; }
+.why-lines .say-text { font-size: 24px; font-weight: 700; line-height: 1.5; }
+.rewind-why .btn-row { min-height: 56px; }
 .cell.is-rewind { border: 6px solid var(--accent); }
 .cell.is-end { cursor: default; font-weight: 700; }
 .rewind .map-status .say { font-size: 18px; }
@@ -974,3 +1018,6 @@ button.clue-count { min-height: 44px; padding: 4px var(--s2); font-weight: 700; 
     transition: none !important;
   }
 }
+/* 두 번째 여행: '내 예측' 칸에 고른 영어 문장이 들어가 길다. 질문 칸을 줄바꿈해 문장 칸을 넓힌다 */
+.cert[data-trip="2"] .cert-predicts tbody th { white-space: normal; width: 9.5em; }
+.cert[data-trip="2"] .cert-real { width: 9em; }

@@ -175,7 +175,21 @@ export const COPY = {
 
   // ---------- S10 수료증 ----------
   's10.done': { voice: 'hq', text: '훈련 종료. 견습 가이드 수료를 인정한다.' },
-  's10.title': { voice: 'label', text: 'TIME TRAVEL 견습 가이드 수료증' },
+  // 증서 (시안 B)
+  's10.brand': { voice: 'label', text: 'TIME TRAVEL' },
+  's10.name': { voice: 'label', text: '견습 가이드 수료증' },
+  's10.passed': { voice: 'label', text: '이 견습 가이드는 장면 1~6 훈련을 모두 마쳤다.' },
+  's10.sign': { voice: 'label', text: '{date} · TIME TRAVEL 본부' },
+  // 훈련 기록
+  's10.record': { voice: 'label', text: '훈련 기록' },
+  's10.predictTitle': { voice: 'label', text: '내 예측과 실제로 일어난 일' },
+  's10.colQ': { voice: 'label', text: '질문' },
+  's10.colMine': { voice: 'label', text: '내 예측' },
+  's10.colReal': { voice: 'label', text: '실제로 일어난 일' },
+  's10.moodTitle': { voice: 'label', text: '관찰 일지 · Eckels의 마음' },
+  's10.starTitle': { voice: 'label', text: '★ 도전' },
+  's10.starCount': { voice: 'label', text: '{n}개 보고' },
+  's10.sceneNo': { voice: 'label', text: '장면 {n}' },
   's10.p1': { voice: 'label', text: '① Eckels는 규칙을 끝까지 지킬까' },
   's10.p2': { voice: 'label', text: '② 모두 무사히 돌아갈 수 있을까' },
   's10.p3': { voice: 'label', text: '③ 현재로 돌아가면 뭐가 달라져 있을까' },
@@ -185,6 +199,11 @@ export const COPY = {
 
   // ---------- S11 되감기 ----------
   's11.open': { voice: 'hq', text: '마지막 임무. 결말을 알고 다시 보라. 결말을 미리 알려 준 문장을 찾아라.' },
+  // 설명 (첫 여행만): 본부 문구 다음에 한 줄씩
+  's11.why1': { voice: 'travis', text: '결말을 알고 다시 읽으면 다르게 보이는 문장이 있어.' },
+  's11.why2': { voice: 'travis', text: '아침에 하늘이 흐렸다. 오후에 비가 왔다.' },
+  's11.why3': { voice: 'travis', text: '흐린 하늘이 비를 미리 알려 줬지. 그런 문장이 단서야.' },
+  's11.why4': { voice: 'travis', text: '장면 1~5에서 단서를 찾아 ☆를 눌러.' },
   's11.added': { voice: 'narration', text: '단서 수첩에 담았다.' },
   's11.full': { voice: 'hq', text: '수첩은 다섯 칸이다. 하나를 빼라.' },
   's11.memo': { voice: 'label', text: '나중에 일어난 일' },

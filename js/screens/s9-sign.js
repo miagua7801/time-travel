@@ -26,7 +26,7 @@ export function renderSign(root, { go, app }) {
 
   const head = say('s9.open', {}, 'h1');
   // 다음 화면(S10 수료증)의 카드 6장과 관찰 일지 정답 카드를 미리 받아 둔다
-  preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer)), 'assets/img/map.webp']);
+  preload([...SCENES.map((s) => cardSrc(s.img)), ...Object.keys(rec.mood).filter((id) => MOODS[id]).map((id) => moodSrc(MOODS[id].answer)), 'assets/img/map.webp', 'assets/img/butterfly_rest.webp']); // 수료증의 나비 포함
 
   // ----- 간판: 그림을 간판 둘레만 잘라 크게 보인다 -----
   const cropX = SIGN_SPOT.left - MARGIN_X;

@@ -367,7 +367,7 @@ function buildScene(n, { app, go, mode, again = false, openPast = null, onNow = 
   function showReview() {
     const reviews = asks.filter(answered).map((a) => {
       if (a[0] === 'c') return checkReview(a, story.checks[a], rec.checks[a]);
-      if (a[0] === 'm') return moodReview(a, MOODS[a], rec.mood[a]);
+      if (a[0] === 'm') return moodReview(a, MOODS[a]);
       if (rec.trip === 2) { if (rec.picks[a].d !== null) reader.markPicked(rec.picks[a].d); return pickReview(rec.picks[a], textOf); }
       return predictReview(a, rec.predict[a]);
     });

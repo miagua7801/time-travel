@@ -201,9 +201,15 @@ export function moodAsk(id, mood, handlers) {
   return judgedAsk(id, 'ask-mood', (onPick) => moodRow(mood, onPick), mood.options.indexOf(mood.answer), mood.evidence, handlers);
 }
 
-// saved: 처음 고른 카드 이름
-export function moodReview(id, mood, saved) {
-  return judgedReview(id, 'ask-mood', moodRow(mood, null), mood.options.indexOf(saved), mood.options.indexOf(mood.answer));
+// 다시 보기: 정답 카드에만 ✓. 처음 고른 카드(틀렸어도)는 표시하지 않는다 — 수료증·지난 이야기와 같이,
+// 잘못 고른 감정이 남아 보이지 않게 한다. 기기의 기록(처음 고른 카드)은 결과 시트에만 쓰인다.
+export function moodReview(id, mood) {
+  const t = promptBox(`ask.${id}`);
+  t.text.removeAttribute('role');
+  const row = moodRow(mood, null);
+  row.lock(true);
+  row.mark(mood.options.indexOf(mood.answer), 'right');
+  return el('div', { className: 'ask ask-mood ask-review' }, t.box, el('div', { className: 'ask-line' }, row.el));
 }
 
 // ---------- 두 번째 여행의 예측 자리: 본문의 ☆로 문장 하나를 고르거나 "없다" → 이유 한 줄(비워도 됨) ----------
