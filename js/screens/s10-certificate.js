@@ -1,7 +1,9 @@
 // S10 수료증 (스토리보드 6장 S10 · 수료증 시안 B, docs/ARCHITECTURE.md 3.2·3.5·3.6)
 // 위에 [본부] 문구. 왼쪽 이중 테두리 증서: 나비, TIME TRAVEL, 견습 가이드 수료증, 반·번호, 수료 문장, 장면 카드 3×2, 수료한 날짜.
 // 오른쪽 '훈련 기록': 연회색 상자 3개 — 위 예측(두 번째 여행은 예측 자리에서 고른 문장), 아래 왼쪽 관찰 일지, 아래 오른쪽 ★ 도전.
-// 기록이 없는 상자는 숨긴다. 단추는 "되감기" 하나. 여기서 엔딩을 본 것으로 저장하고 결과를 보낸다.
+// 기록이 없는 상자는 숨긴다. 여기서 엔딩을 본 것으로 저장하고 결과를 보낸다.
+// 단추: 단서 수첩 보고 전에는 "되감기" 하나. 보고한 뒤에는 "수료증 저장"(주 단추)과 "길 지도"(S4).
+// 완료 상자의 "수료증 저장"으로 오면(opts.save) 바로 저장을 시작한다.
 import { el, say, button, img } from '../ui.js';
 import { line } from '../text.js';
 import { saveRecord, today } from '../state.js';
@@ -9,6 +11,7 @@ import { getScene, getStory } from '../content.js';
 import { queueResult } from '../send.js';
 import { SCENES, MOODS, PREDICTS } from '../../data/scenes.js';
 import { openCards } from '../parts/cardview.js';
+import { saveCertificate } from '../parts/certimage.js';
 
 function lineText(sceneNo, d) {
   const data = getScene(sceneNo);
@@ -28,7 +31,7 @@ const label = (tag, id, values, className) => {
   return n;
 };
 
-export function renderCertificate(root, { go, app }) {
+export function renderCertificate(root, { go, app, opts = {} }) {
   const rec = app.rec;
   const story = getStory();
   // 엔딩을 본 것으로 저장한다. 수료한 날짜는 처음 수료한 날로 한 번만 정한다(다시 열어도 같음).
@@ -118,12 +121,40 @@ export function renderCertificate(root, { go, app }) {
   // 답이 길면 이 칸 안에서만 굴러가고 아래 단추를 덮지 않는다
   const record = el('section', { className: 'cert-record' }, label('h2', 's10.record', {}, 'cert-record-title'), predictBox, lower);
 
-  // 단추는 "되감기" 하나. 길 지도로 가는 단추는 없다(되감기에 들어간 뒤 길 지도가 열린다).
-  const rewind = button('btn.rewind', () => go('s11'), 'primary');
+  // 보고 전: "되감기" 하나. 길 지도로 가는 단추는 없다(되감기에 들어간 뒤 길 지도가 열린다).
+  // 보고 뒤: "수료증 저장"(주 단추)과 "길 지도"(S4). 저장 결과 문구는 단추 줄 왼쪽에 나와 수료증을 가리지 않는다.
+  const status = el('div', { className: 'status cert-status', role: 'status' });
+  let buttons;
+  let save = null;
+  if (rec.flags.reported) {
+    let busy = false;
+    save = async () => {
+      if (busy) return;
+      busy = true;
+      status.replaceChildren();
+      try {
+        await saveCertificate(rec);
+        // 다운로드가 막혀도 앱이 알아채지 못할 수 있으므로, 저장 뒤 문구 아래에 작은 글씨로 항상 화면 찍기 안내를 함께 보인다
+        if (status.isConnected) {
+          const hint = say('s10.saveHint');
+          hint.classList.add('cert-hint');
+          status.replaceChildren(say('s10.saved'), hint);
+        }
+      } catch (e) {
+        if (status.isConnected) status.replaceChildren(say('s10.saveFail'));
+      } finally {
+        busy = false;
+      }
+    };
+    buttons = [button('btn.certSave', save, 'primary'), button('btn.map', () => go('s4'), '')];
+  } else {
+    buttons = [button('btn.rewind', () => go('s11'), 'primary')];
+  }
 
-  box.append(head, el('div', { className: 'cert-body' }, paper, record), el('div', { className: 'btn-row cert-buttons' }, rewind));
+  box.append(head, el('div', { className: 'cert-body' }, paper, record), el('div', { className: 'btn-row cert-buttons' }, status, ...buttons));
   box.dataset.trip = String(rec.trip);
   root.append(box);
   if (!story) box.dataset.empty = 'true';
+  if (save && opts.save) save();
   return head;
 }

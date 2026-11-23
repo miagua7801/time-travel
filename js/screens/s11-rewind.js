@@ -147,12 +147,13 @@ function renderNotebook(root, { go, app, back }) {
   // 단서가 하나 이상이고 보고 전이면 위쪽에 [본부] 안내
   const ask = say('s11.writeAndReport');
   ask.classList.add('nb-ask');
-  // 보고 뒤 완료 상자 (되감기가 열린 뒤에만): 임무 목록 모두 ✓, [본부] 완료 문구, "길 지도"(S4)·"수료증". 잠금이 아니다.
+  // 보고 뒤 완료 상자 (되감기가 열린 뒤에만): 임무 목록 모두 ✓, [본부] 완료 문구,
+  // "수료증 저장"(주 단추, S10으로 가서 바로 저장)·"길 지도"(S4). 잠금이 아니다.
   const tasks = missionList(rec);
   const doneBox = el('div', { className: 'nb-done' },
     tasks.el,
     say('mission.allDone'),
-    el('div', { className: 'btn-row' }, button('btn.map', () => go('s4'), 'primary'), button('btn.certificate', () => go('s10'), '')));
+    el('div', { className: 'btn-row' }, button('btn.certSave', () => go('s10', { save: true }), 'primary'), button('btn.map', () => go('s4'), '')));
   doneBox.setAttribute('role', 'status');
   const paintState = () => {
     ask.hidden = !(rec.notes.length > 0 && !rec.flags.reported);

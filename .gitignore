@@ -13,6 +13,7 @@ tools/shot-step9.mjs
 tools/shot-tvdraft.mjs
 tools/shot-vocab.mjs
 tools/shot-rewind.mjs
+tools/shot-certsave.mjs
 
 # 교과서 본문·출판사 음성·뉴스 원본, 기획 문서. 절대 커밋하지 않는다.
 private/

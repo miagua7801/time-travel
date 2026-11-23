@@ -48,6 +48,7 @@ export const COPY = {
   'btn.notebook': { voice: 'button', text: '단서 수첩' },
   'btn.wipe': { voice: 'button', text: '지움' },
   'btn.cancel': { voice: 'button', text: '취소' },
+  'btn.certSave': { voice: 'button', text: '수료증 저장' },
 
   // ---------- S0 접속 ----------
   's0.connect': { voice: 'hq', text: '견습 가이드, 접속하라.' },
@@ -195,6 +196,11 @@ export const COPY = {
   's10.starTitle': { voice: 'label', text: '★ 도전' },
   's10.starCount': { voice: 'label', text: '{n}개 보고' },
   's10.sceneNo': { voice: 'label', text: '장면 {n}' },
+  's10.notes': { voice: 'label', text: '단서 수첩 {n}개 보고' },
+  // 수료증 저장 (단서 수첩을 보고한 뒤)
+  's10.saved': { voice: 'narration', text: '수료증을 저장했다. 파일 앱의 다운로드에 있다.' },
+  's10.saveHint': { voice: 'hq', text: '파일이 없으면 Ctrl과 창 보기 키로 화면을 찍어라.' },
+  's10.saveFail': { voice: 'hq', text: '저장하지 못했다. Ctrl과 창 보기 키를 함께 눌러 화면을 찍어라.' },
   's10.p1': { voice: 'label', text: '① Eckels는 규칙을 끝까지 지킬까' },
   's10.p2': { voice: 'label', text: '② 모두 무사히 돌아갈 수 있을까' },
   's10.p3': { voice: 'label', text: '③ 현재로 돌아가면 뭐가 달라져 있을까' },
