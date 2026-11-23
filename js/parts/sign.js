@@ -15,6 +15,49 @@ export function signBox(...kids) {
   return box;
 }
 
+// 간판 글자 칸을 그림이 실제로 그려진 자리에 맞춘다.
+// 그림 칸이 정사각형이 아니면(object-fit: cover로 위아래나 양옆이 잘리면) 칸 기준 %가 그림과 어긋나므로,
+// 그려진 그림의 크기·위치를 재서 px로 놓는다. 글자 크기도 그려진 그림 너비를 따른다(--sign-img-w).
+// host: 글자 칸을 얹는 요소(position이 있어야 함), im: 그 안의 그림. 돌려주는 함수를 부르면 지켜보기를 멈춘다.
+export function fitSign(host, im, box) {
+  box.style.visibility = 'hidden'; // 자리를 재기 전에는 어긋난 글자를 보이지 않는다
+  const place = () => {
+    const nw = im.naturalWidth;
+    const nh = im.naturalHeight;
+    const cw = im.clientWidth;
+    const ch = im.clientHeight;
+    if (!nw || !nh || !cw || !ch || !host.isConnected) return;
+    const fit = getComputedStyle(im).objectFit;
+    const s = fit === 'cover' ? Math.max(cw / nw, ch / nh) : fit === 'contain' ? Math.min(cw / nw, ch / nh) : 0;
+    const w = s ? nw * s : cw;
+    const h = s ? nh * s : ch;
+    const x = im.offsetLeft + (cw - w) / 2; // object-position은 가운데
+    const y = im.offsetTop + (ch - h) / 2;
+    box.style.left = `${x + (w * SIGN_SPOT.left) / 100}px`;
+    box.style.top = `${y + (h * SIGN_SPOT.top) / 100}px`;
+    box.style.width = `${(w * SIGN_SPOT.width) / 100}px`;
+    box.style.height = `${(h * SIGN_SPOT.height) / 100}px`;
+    box.style.setProperty('--sign-img-w', `${w}px`);
+    box.style.visibility = '';
+  };
+  im.addEventListener('load', place);
+  if (im.complete) place();
+  let ro = null;
+  try { ro = new ResizeObserver(place); ro.observe(host); } catch (e) { /* 없으면 처음 자리만 */ }
+  return () => { if (ro) ro.disconnect(); };
+}
+
+// 길 지도 카드 1: 카드 그림의 빈 간판에 간판 문구를 얹는다 (장면 1 그림과 같은 모양). 화면 읽기에서는 뺀다.
+export function signOnCard(cell, im) {
+  const text = signText();
+  if (!text) return () => {};
+  const box = signBox(text);
+  box.classList.add('sign-on-card');
+  box.setAttribute('aria-hidden', 'true');
+  cell.append(box);
+  return fitSign(cell, im, box);
+}
+
 // 올바른 간판 문구 (잠긴 데이터의 카드 1 뒷면 문장). 대문자로.
 export function signText() {
   const story = getStory();

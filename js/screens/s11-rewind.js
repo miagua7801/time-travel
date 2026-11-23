@@ -5,6 +5,7 @@ import { el, say, button, img, onLeave, later } from '../ui.js';
 import { clueRule } from '../parts/cluerule.js';
 import { makeGuide } from '../parts/guide.js';
 import { missionList } from '../parts/tasks.js';
+import { signOnCard } from '../parts/sign.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
@@ -91,6 +92,7 @@ function renderRewindMap(root, { go, app }) {
       });
     }
     cell.dataset.scene = String(s.n);
+    if (s.sign) onLeave(signOnCard(cell, card)); // 카드 1의 빈 간판에 간판 문구
     const li = el('li', { className: 'map-spot' }, cell);
     li.style.left = MAP_SPOTS[i][0] + '%';
     li.style.top = MAP_SPOTS[i][1] + '%';

@@ -390,6 +390,9 @@ button.trip.dim { opacity: 0.45; }
 }
 .cell-card { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cell-no { font-size: 40px; }
+/* 길 지도 카드 1의 간판 글자: 번호 띠보다 아래에 깔린다 */
+.cell .sign-on-card { z-index: 0; letter-spacing: 0; }
+.cell.is-done .cell-no { z-index: 1; }
 .cell.is-done .cell-no {
   position: absolute;
   left: 0;
@@ -511,7 +514,7 @@ button.step.is-now { border-color: var(--accent); color: var(--on-accent); backg
   text-align: center;
   color: var(--text);
   font-weight: 700;
-  font-size: 4cqw;
+  font-size: calc(var(--sign-img-w, 100cqw) * 0.04); /* 그려진 그림 너비의 4% (fitSign이 --sign-img-w를 정한다) */
   line-height: 1.25;
   letter-spacing: 0.02em;
   overflow: hidden;

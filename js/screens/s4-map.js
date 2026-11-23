@@ -7,6 +7,7 @@ import { saveRecord } from '../state.js';
 import { SCENES, MAP_SPOTS, MOODS } from '../../data/scenes.js';
 import { NOTEBOOK_LIMIT } from '../../data/config.js';
 import { openCards } from '../parts/cardview.js';
+import { signOnCard } from '../parts/sign.js';
 import { clueRule } from '../parts/cluerule.js';
 
 const LONG_PRESS_MS = 500;
@@ -43,7 +44,11 @@ export function renderMap(root, { go, app }) {
     const no = el('span', { className: 'cell-no', textContent: String(s.n) });
     const cell = el('button', { type: 'button', className: `cell is-${state}`, title: line(`scene.${s.n}.name`) });
     cell.dataset.scene = String(s.n);
-    if (state === 'done') cell.append(img(`assets/img/cards/${s.img}.webp`, 'cell-card', line(`card.${s.card}`)), no);
+    if (state === 'done') {
+      const card = img(`assets/img/cards/${s.img}.webp`, 'cell-card', line(`card.${s.card}`));
+      cell.append(card, no);
+      if (s.sign) onLeave(signOnCard(cell, card)); // 카드 1의 빈 간판에 간판 문구
+    }
     else if (state === 'now') { cell.append(no); cell.setAttribute('aria-current', 'step'); }
     else cell.append(el('span', { className: 'cell-lock', textContent: '🔒' }), no);
 

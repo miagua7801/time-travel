@@ -15,7 +15,7 @@ import { NOTEBOOK_LIMIT, LISTEN_PAUSE_MS, LISTEN_PAUSE_INLINE_MS, LISTEN_PAUSE_C
 import { makeReader } from '../parts/reader.js';
 import { makeGuide } from '../parts/guide.js';
 import { missionList } from '../parts/tasks.js';
-import { signBox, signText } from '../parts/sign.js';
+import { signBox, signText, fitSign } from '../parts/sign.js';
 import { checkAsk, checkReview, predictAsk, predictReview, moodAsk, moodReview, pickAsk, pickReview, doneView, reviewView } from '../parts/ask.js';
 import { renderSoon } from './soon.js';
 
@@ -111,6 +111,8 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
     sign.setAttribute('aria-hidden', 'true');
     pic.classList.add('sign-host');
     pic.append(sign);
+    // 그림 칸이 낮아져 그림 위아래가 잘려도 간판 자리에 맞게
+    onLeave(fitSign(pic, pic.querySelector('.scene-img'), sign));
   }
   // 뉴스 TV 단추(장면 1·6): 장면 그림 아래 여백에 그림 너비만큼. TV 그림표 + "뉴스". 나오는 동안 "멈춤".
   // 장면이 열릴 때 테두리가 한 번 1초 빛난다.
