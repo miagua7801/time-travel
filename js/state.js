@@ -4,6 +4,7 @@
 
 const REC = 'tt8:v2:rec';
 const OUT = 'tt8:v2:out';
+const CERT_OUT = 'tt8:v2:certout'; // 보내지 못한 수료증 그림 (교사용 복사본). 반·번호마다 가장 최근 하나
 
 const memory = new Map();
 
@@ -98,4 +99,13 @@ export function loadOutbox() {
 }
 export function saveOutbox(o) {
   return write(OUT, o);
+}
+
+// 보내지 못한 수료증 그림
+export function loadCertOutbox() {
+  const o = read(CERT_OUT);
+  return o && typeof o === 'object' ? o : {};
+}
+export function saveCertOutbox(o) {
+  return write(CERT_OUT, o);
 }

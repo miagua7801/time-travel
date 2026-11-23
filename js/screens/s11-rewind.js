@@ -9,7 +9,7 @@ import { signOnCard } from '../parts/sign.js';
 import { line } from '../text.js';
 import { saveRecord } from '../state.js';
 import { getStory } from '../content.js';
-import { queueResult } from '../send.js';
+import { queueResult, queueCertificate } from '../send.js';
 import { SCENES, MAP_SPOTS } from '../../data/scenes.js';
 import { NOTEBOOK_LIMIT, REWIND_LINE_MS } from '../../data/config.js';
 
@@ -199,9 +199,12 @@ function renderNotebook(root, { go, app, back }) {
 
   const report = button('btn.report', () => {
     for (const n of rec.notes) n.memo = String(n.memo || '').trim();
+    const first = !rec.flags.reported;
     rec.flags.reported = true;
     saveRecord(rec);
     queueResult(rec);
+    // 처음 보고한 직후 한 번 수료증 그림을 교사에게 보낸다(엔딩을 본 뒤에만. 엔딩 전 보고면 처음 수료증이 열릴 때 S10이 보낸다)
+    if (first && rec.flags.ended) queueCertificate(rec);
     status.replaceChildren(say('s11.reported'));
     box.dataset.state = 'reported';
     paintState();

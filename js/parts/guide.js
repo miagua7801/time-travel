@@ -30,7 +30,9 @@ document.addEventListener('pointerdown', () => { keyboard = false; }, true);
 // done: { copy, ms } 마지막 단계까지 가면 이 [본부] 문구를 ms 동안 보이고 닫는다 (그동안에도 누름을 막는다)
 // onEnd(finished): 끝났을 때. 마지막 단계까지 갔으면 true, 건너뛰기·화면 떠남이면 false
 // onStep(step): 단계가 바뀔 때마다
-export function makeGuide(host, { steps, skip = false, block = 'none', done = null, onEnd, onStep }) {
+// dim: false면 화면을 어둡게 덮지 않는다. 테두리·곡선은 강조색, 문구는 본문 글자색 (S10 되감기 안내)
+// 단계의 mid: true면 옆(left·right) 문구를 단추와 같은 높이 가운데에 둔다
+export function makeGuide(host, { steps, skip = false, block = 'none', done = null, dim = true, onEnd, onStep }) {
   // 덮개: 어두운 막(가운데 구멍) + 흰 점선 테두리 + 흰 점선 곡선 + 끝점
   const veil = svgEl('path', { class: 'guide-veil-fill', 'fill-rule': 'evenodd' });
   const ring = svgEl('rect', { class: 'guide-ring', rx: 12, ry: 12 });
@@ -38,10 +40,12 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
   const dot = svgEl('circle', { class: 'guide-dot', r: 5 });
   const cover = svgEl('svg', { class: 'guide-cover', 'aria-hidden': 'true' });
   cover.append(veil, ring, link, dot);
+  if (!dim) cover.classList.add('no-dim');
 
   const text = el('p', { className: 'say say-hq guide-text' });
   const tip = el('div', { className: 'guide-tip' }, text);
   tip.setAttribute('role', 'status');
+  if (!dim) tip.classList.add('no-dim');
   const skipBtn = skip ? button('btn.skip', () => end(false), 'small') : null;
   if (skipBtn) tip.append(skipBtn);
   let at = -1;
@@ -143,7 +147,7 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
     const roundRect = (b) => `M${b.x + rad},${b.y} H${b.x + b.w - rad} Q${b.x + b.w},${b.y} ${b.x + b.w},${b.y + rad} V${b.y + b.h - rad} Q${b.x + b.w},${b.y + b.h} ${b.x + b.w - rad},${b.y + b.h} H${b.x + rad} Q${b.x},${b.y + b.h} ${b.x},${b.y + b.h - rad} V${b.y + rad} Q${b.x},${b.y} ${b.x + rad},${b.y} Z`;
     // 함께 밝게 남길 곳 (구멍끼리 겹치지 않게 여백을 작게)
     const extra = s.also ? s.also().filter(shown).map((e) => roundRect(box(e, 3))) : [];
-    veil.setAttribute('d', `M0,0 H${W} V${H} H0 Z ${roundRect(h)} ${extra.join(' ')}`);
+    veil.setAttribute('d', dim ? `M0,0 H${W} V${H} H0 Z ${roundRect(h)} ${extra.join(' ')}` : '');
     // 흰 점선 테두리는 단추에
     const g = box(t, pad);
     Object.entries({ x: g.x, y: g.y, width: g.w, height: g.h }).forEach(([k, v]) => ring.setAttribute(k, v));
@@ -154,9 +158,10 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
     const w = tip.offsetWidth;
     const th = tip.offsetHeight;
     // 문구는 밝게 남긴 곳(구멍) 바깥의 어두운 곳에 둔다
+    const sideY = s.mid ? g.y + g.h / 2 - th / 2 : g.y + g.h / 2 - th - 10;
     const spots = {
-      right: [h.x + h.w + gap, g.y + g.h / 2 - th - 10],
-      left: [h.x - gap - w, g.y + g.h / 2 - th - 10],
+      right: [h.x + h.w + gap, sideY],
+      left: [h.x - gap - w, sideY],
       below: [g.x + 36, h.y + h.h + gap],
       above: [g.x + 36, h.y - gap - th],
     };

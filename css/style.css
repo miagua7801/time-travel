@@ -677,6 +677,11 @@ button.step.is-now { border-color: var(--accent); color: var(--on-accent); backg
 /* 장비 점검 마무리 문구: 화면 가운데 */
 .guide-tip.is-done { padding: var(--s2) var(--s4); border-radius: var(--radius); background: var(--text); }
 .guide-tip.is-done .guide-text { font-size: 28px; }
+/* 어둡게 덮지 않는 안내 (S10 되감기): 밝은 화면 위라 테두리·곡선은 강조색, 문구는 본문 글자색 */
+.guide-cover.no-dim .guide-ring, .guide-cover.no-dim .guide-link { stroke: var(--accent); }
+.guide-cover.no-dim .guide-dot { fill: var(--accent); }
+.guide-tip.no-dim { color: var(--text); }
+.guide-tip.no-dim .guide-text { font-size: 20px; }
 .guide-tip button.small { pointer-events: auto; color: var(--dark-text); border-color: var(--dark-text); }
 .ask { display: flex; flex-direction: column; gap: var(--s1); }
 .ask .say-text { margin: 0; font-size: 22px; font-weight: 700; }
@@ -951,6 +956,18 @@ button.sign-word.fixed { color: var(--text); border-bottom-color: transparent; o
 .cert-status .say { margin: 0; line-height: 1.35; }
 .cert-status .cert-hint { font-size: 15px; color: var(--muted); }
 .cert-status .cert-hint::before { content: none; }
+/* 보고 전 "되감기": 1초 빛난 뒤 강조색 테두리로 남는다 (반복 없음) */
+.cert-buttons button.cue { outline: 3px solid var(--accent); outline-offset: 3px; animation: cue-glow 1s ease-out; }
+.cert-buttons button.cue:focus-visible { outline-color: var(--focus); }
+/* 되감기 안내(z-index 5·6)가 떠 있어도 카드 보기 창이 그 위에 온다 */
+.cert .cards-view { z-index: 7; }
+@keyframes cue-glow {
+  from { outline-width: 10px; outline-offset: 3px; }
+  to { outline-width: 3px; outline-offset: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cert-buttons button.cue { animation: none; }
+}
 
 /* ---------- S11 되감기·단서 수첩 ---------- */
 /* 되감기 설명 (첫 여행만): 본부 문구 → Travis 네 줄이 한 줄씩 → "임무 시작" */

@@ -46,10 +46,38 @@ class FakeBook {
   insertSheet(n) { const s = new FakeSheet(n); this.sheets.set(n, s); return s; }
 }
 
+// 아주 작은 가짜 드라이브: 폴더·파일 나무. 휴지통은 trashed 표시만 (DriveApp처럼 목록에는 남는다)
+let nextId = 1;
+const iter = (list) => { let i = 0; return { hasNext: () => i < list.length, next: () => list[i++] }; };
+export class FakeFile {
+  constructor(blob) { this.id = nextId++; this.name = blob.getName(); this.type = blob.type; this.bytes = blob.bytes; this.trashed = false; }
+  getName() { return this.name; }
+  isTrashed() { return this.trashed; }
+  setTrashed(v) { this.trashed = Boolean(v); return this; }
+}
+export class FakeFolder {
+  constructor(name) { this.id = nextId++; this.name = name; this.folders = []; this.files = []; this.trashed = false; }
+  getName() { return this.name; }
+  getUrl() { return 'https://drive.google.com/drive/folders/fake' + this.id; }
+  isTrashed() { return this.trashed; }
+  setTrashed(v) { this.trashed = Boolean(v); return this; }
+  getFoldersByName(n) { return iter(this.folders.filter((f) => f.name === n)); }
+  getFilesByName(n) { return iter(this.files.filter((f) => f.name === n)); }
+  createFolder(n) { const f = new FakeFolder(n); this.folders.push(f); return f; }
+  createFile(blob) { const f = new FakeFile(blob); this.files.push(f); return f; }
+  // 시험용: 휴지통에 없는 하위 폴더·파일
+  live(n) { return this.folders.find((f) => f.name === n && !f.trashed) || null; }
+  liveFiles(n) { return this.files.filter((f) => !f.trashed && (n === undefined || f.name === n)); }
+  // 시험용: 영구 삭제 (휴지통 비우기)
+  purge() { this.folders = this.folders.filter((f) => !f.trashed); this.files = this.files.filter((f) => !f.trashed); }
+}
+
 // Code.gs를 불러 doPost·doGet과 가짜 시트를 돌려준다
 export function loadResults({ lockFails = false } = {}) {
   const book = new FakeBook();
+  const drive = new FakeFolder('내 드라이브');
   const lockLog = [];
+  const logs = [];
   const ctx = {
     ContentService: { createTextOutput: (t) => ({ text: String(t), getContent() { return this.text; } }) },
     LockService: { getScriptLock: () => ({
@@ -57,6 +85,13 @@ export function loadResults({ lockFails = false } = {}) {
       releaseLock() { lockLog.push('release'); },
     }) },
     SpreadsheetApp: { getActiveSpreadsheet: () => book },
+    DriveApp: { getRootFolder: () => drive },
+    Logger: { log: (m) => { logs.push(String(m)); } },
+    Utilities: {
+      // Apps Script처럼 -128~127 바이트 배열
+      base64Decode: (t) => { if (!/^[A-Za-z0-9+/]*={0,2}$/.test(t)) throw new Error('base64 아님'); return [...Buffer.from(t, 'base64')].map((b) => (b > 127 ? b - 256 : b)); },
+      newBlob: (bytes, type, name) => ({ bytes, type, name, getName() { return this.name; } }),
+    },
     Date,
     JSON,
     Math,
@@ -68,5 +103,5 @@ export function loadResults({ lockFails = false } = {}) {
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(CODE, 'utf8'), ctx, { filename: 'Code.gs' });
   const post = (body) => ctx.doPost({ postData: { contents: typeof body === 'string' ? body : JSON.stringify(body) } }).getContent();
-  return { ctx, book, post, lockLog, header: () => ctx.header_() };
+  return { ctx, book, drive, post, lockLog, logs, header: () => ctx.header_() };
 }

@@ -200,6 +200,7 @@ export const COPY = {
   // 수료증 저장 (단서 수첩을 보고한 뒤)
   's10.saved': { voice: 'narration', text: '수료증을 저장했다. 파일 앱의 다운로드에 있다.' },
   's10.saveHint': { voice: 'hq', text: '파일이 없으면 Ctrl과 창 보기 키로 화면을 찍어라.' },
+  's10.goRewind': { voice: 'hq', text: "마지막 임무가 남았다. '되감기'를 눌러라." },
   's10.saveFail': { voice: 'hq', text: '저장하지 못했다. Ctrl과 창 보기 키를 함께 눌러 화면을 찍어라.' },
   's10.p1': { voice: 'label', text: '① Eckels는 규칙을 끝까지 지킬까' },
   's10.p2': { voice: 'label', text: '② 모두 무사히 돌아갈 수 있을까' },

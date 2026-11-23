@@ -3,12 +3,15 @@
 // 오른쪽 '훈련 기록': 연회색 상자 3개 — 위 예측(두 번째 여행은 예측 자리에서 고른 문장), 아래 왼쪽 관찰 일지, 아래 오른쪽 ★ 도전.
 // 기록이 없는 상자는 숨긴다. 여기서 엔딩을 본 것으로 저장하고 결과를 보낸다.
 // 단추: 단서 수첩 보고 전에는 "되감기" 하나. 보고한 뒤에는 "수료증 저장"(주 단추)과 "길 지도"(S4).
+// 보고 전(두 여행 모두): 1초 뒤 장비 점검 모양으로 "되감기"를 가리키며 [본부] 문구. 화면을 어둡게 덮지 않고,
+// 수료증을 가리지 않게 단추 왼쪽 같은 높이에 둔다. "되감기"를 누를 때까지 남는다. 단추 테두리는 1초 빛난 뒤 강조색으로 남는다.
 // 완료 상자의 "수료증 저장"으로 오면(opts.save) 바로 저장을 시작한다.
-import { el, say, button, img } from '../ui.js';
+import { el, say, button, img, later, onLeave } from '../ui.js';
+import { makeGuide } from '../parts/guide.js';
 import { line } from '../text.js';
 import { saveRecord, today } from '../state.js';
 import { getScene, getStory } from '../content.js';
-import { queueResult } from '../send.js';
+import { queueResult, queueCertificate } from '../send.js';
 import { SCENES, MOODS, PREDICTS } from '../../data/scenes.js';
 import { openCards } from '../parts/cardview.js';
 import { saveCertificate } from '../parts/certimage.js';
@@ -35,12 +38,15 @@ export function renderCertificate(root, { go, app, opts = {} }) {
   const rec = app.rec;
   const story = getStory();
   // 엔딩을 본 것으로 저장한다. 수료한 날짜는 처음 수료한 날로 한 번만 정한다(다시 열어도 같음).
+  const firstEnd = !rec.flags.ended;
   if (!rec.flags.ended || !rec.endDay) {
     rec.flags.ended = true;
     if (!rec.endDay) rec.endDay = today();
     saveRecord(rec);
   }
   queueResult(rec);
+  // 두 번째 여행은 엔딩 전에 단서 수첩을 보고할 수 있다. 그때는 처음 수료증이 열릴 때 교사용 복사본을 보낸다.
+  if (firstEnd && rec.flags.reported) queueCertificate(rec);
 
   const head = say('s10.done', {}, 'h1');
 
@@ -132,6 +138,7 @@ export function renderCertificate(root, { go, app, opts = {} }) {
       if (busy) return;
       busy = true;
       status.replaceChildren();
+      queueCertificate(rec); // 교사용 복사본. 학생 화면에는 알리지 않는다
       try {
         await saveCertificate(rec);
         // 다운로드가 막혀도 앱이 알아채지 못할 수 있으므로, 저장 뒤 문구 아래에 작은 글씨로 항상 화면 찍기 안내를 함께 보인다
@@ -150,11 +157,20 @@ export function renderCertificate(root, { go, app, opts = {} }) {
   } else {
     buttons = [button('btn.rewind', () => go('s11'), 'primary')];
   }
+  const rewind = rec.flags.reported ? null : buttons[0];
 
   box.append(head, el('div', { className: 'cert-body' }, paper, record), el('div', { className: 'btn-row cert-buttons' }, status, ...buttons));
   box.dataset.trip = String(rec.trip);
   root.append(box);
   if (!story) box.dataset.empty = 'true';
   if (save && opts.save) save();
+  if (rewind) {
+    later(1000, () => {
+      rewind.classList.add('cue');
+      const hint = makeGuide(box, { dim: false, steps: [{ no: 0, copy: 's10.goRewind', target: () => rewind, sides: ['left'], mid: true }] });
+      hint.start();
+      onLeave(() => hint.end());
+    });
+  }
   return head;
 }

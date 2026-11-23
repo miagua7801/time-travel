@@ -12,6 +12,13 @@
  * - 칸마다 글 길이를 자르고, = + - @로 시작하는 글은 수식으로 실행되지 않게 앞에 '를 붙인다.
  * - 여러 명이 동시에 보내도 줄이 엉키지 않게 잠금(LockService)을 건다.
  * - 이름·이메일·기기 정보는 받지도 적지도 않는다. 단서 칸에는 교과서 문장이 들어가므로 시트를 공개로 공유하지 않는다.
+ *
+ * 수료증 그림 (kind: 'cert'): 결과 시트에는 아무것도 적지 않는다.
+ * - 교사 '내 드라이브'의 "Lesson 8 수료증" 폴더 안 반 폴더(2-1 ~ 2-6)에 "{반}반_{번호}번.jpg" 이름으로 저장한다.
+ *   폴더가 없으면(처음이거나, 교사가 폴더를 지웠으면) 새로 만든다. 휴지통에 있는 폴더는 쓰지 않는다.
+ * - 같은 이름의 파일이 있으면 휴지통으로 옮기고 새로 만든다.
+ * - JPEG만, 1MB 이하만 받는다(앱은 JPEG로 보낸다). 반·번호 검사는 결과와 같다.
+ * - 처음 배포할 때 드라이브 권한을 승인해야 한다 (apps-script/README.md, README-teacher.md).
  */
 
 // 담당 반 목록. 웹앱 data/config.js의 CLASSES와 같게
@@ -32,6 +39,11 @@ var COLUMNS = [
   ['n1', '단서1', 300], ['n2', '단서2', 300], ['n3', '단서3', 300], ['n4', '단서4', 300], ['n5', '단서5', 300]
 ];
 
+// 수료증 그림
+var CERT_FOLDER = 'Lesson 8 수료증';
+var CERT_MAX_BYTES = 1024 * 1024;
+var CERT_TYPES = { 'image/jpeg': [0xFF, 0xD8, 0xFF] };
+
 function header_() {
   return ['번호'].concat(COLUMNS.map(function (c) { return c[1]; })).concat(['받은 시각']);
 }
@@ -50,6 +62,14 @@ function doPost(e) {
   }
   try {
     var data = JSON.parse(e && e.postData ? e.postData.contents : '');
+    if (data && data.kind === 'cert') {
+      var who = checkWho_(data);
+      if (!who.ok) return ContentService.createTextOutput('rejected');
+      var blob = certBlob_(data, who.cls, who.num);
+      if (!blob) return ContentService.createTextOutput('rejected');
+      saveCert_(DriveApp.getRootFolder(), who.cls, blob);
+      return ContentService.createTextOutput('ok');
+    }
     var check = checkPayload_(data);
     if (!check.ok) return ContentService.createTextOutput('rejected');
     writeResult_(SpreadsheetApp.getActiveSpreadsheet(), check.cls, check.num, data.fields || {}, new Date());
@@ -62,14 +82,54 @@ function doPost(e) {
 }
 
 // 반·번호 검사
-function checkPayload_(data) {
+function checkWho_(data) {
   if (!data || typeof data !== 'object') return { ok: false };
   var cls = String(data.cls || '').trim();
   var num = Number(data.num);
   if (ALLOWED_CLASSES.indexOf(cls) === -1) return { ok: false };
   if (!(num === Math.floor(num) && num >= NUMBER_MIN && num <= NUMBER_MAX)) return { ok: false };
-  if (!data.fields || typeof data.fields !== 'object') return { ok: false };
   return { ok: true, cls: cls, num: num };
+}
+function checkPayload_(data) {
+  var who = checkWho_(data);
+  if (!who.ok) return who;
+  if (!data.fields || typeof data.fields !== 'object') return { ok: false };
+  return who;
+}
+
+// 수료증 그림: base64 글자 → 파일. 형식·크기·파일 머리가 맞지 않으면 null
+function certBlob_(data, cls, num) {
+  var type = String(data.type || '');
+  var magic = CERT_TYPES[type];
+  if (!magic || typeof data.data !== 'string' || data.data.length > CERT_MAX_BYTES * 4 / 3 + 8) return null;
+  var bytes;
+  try { bytes = Utilities.base64Decode(data.data); } catch (err) { return null; }
+  if (!bytes || bytes.length < 16 || bytes.length > CERT_MAX_BYTES) return null;
+  for (var i = 0; i < magic.length; i++) {
+    if (((bytes[i] + 256) % 256) !== magic[i]) return null; // Apps Script 바이트는 -128~127
+  }
+  return Utilities.newBlob(bytes, type, cls + '반_' + num + '번.jpg');
+}
+
+// 이름이 같은 폴더 가운데 휴지통에 없는 것. 없으면 만든다
+function folder_(parent, name) {
+  var it = parent.getFoldersByName(name);
+  while (it.hasNext()) {
+    var f = it.next();
+    if (!f.isTrashed()) return f;
+  }
+  return parent.createFolder(name);
+}
+
+// 내 드라이브/Lesson 8 수료증/{반}/{반}반_{번호}번.jpg. 같은 이름은 휴지통으로 옮기고 새로 만든다
+function saveCert_(root, cls, blob) {
+  var dir = folder_(folder_(root, CERT_FOLDER), cls);
+  var old = dir.getFilesByName(blob.getName());
+  while (old.hasNext()) {
+    var f = old.next();
+    if (!f.isTrashed()) f.setTrashed(true);
+  }
+  return dir.createFile(blob);
 }
 
 // 이번에 온 칸만 고친 새 줄. oldRow는 '번호'부터 '받은 시각'까지 (없으면 null).
@@ -117,6 +177,14 @@ function writeResult_(ss, cls, num, fields, now) {
     sh.getRange(last + 1, 1, 1, row.length).setValues([row]);
     if (last + 1 > 2) sh.getRange(2, 1, last, head.length).sort(1); // 번호 순
   }
+}
+
+// 편집기에서 한 번 실행한다: 드라이브 권한 승인 창을 띄우고, "Lesson 8 수료증" 폴더와 반 폴더를 만들어 주소를 로그에 찍는다.
+// 학생 그림은 만들지 않는다. 다시 실행해도 폴더가 늘지 않는다.
+function certCheck() {
+  var root = folder_(DriveApp.getRootFolder(), CERT_FOLDER);
+  for (var i = 0; i < ALLOWED_CLASSES.length; i++) folder_(root, ALLOWED_CLASSES[i]);
+  Logger.log('수료증 폴더: ' + root.getName() + ' (반 폴더 ' + ALLOWED_CLASSES.length + '개) ' + root.getUrl());
 }
 
 // 학생이 =, +, -, @로 시작하는 글을 써도 수식으로 실행되지 않게

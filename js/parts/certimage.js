@@ -137,8 +137,9 @@ function drawCard(ctx, im, x, y, size, C) {
   ctx.stroke();
 }
 
-// 수료증 PNG를 만든다. 그림을 모두 받은 뒤에 그린다. 실패하면 오류를 던진다.
-export async function makeCertificatePng(rec) {
+// 수료증 그림을 만든다. 그림을 모두 받은 뒤에 그린다. 실패하면 오류를 던진다.
+// scale: 1366×768의 몇 배, type·quality: canvas.toBlob과 같다. 내려받기는 PNG 2배, 교사용 복사본은 JPEG 1배.
+export async function makeCertificateImage(rec, { scale = SCALE, type = 'image/png', quality } = {}) {
   const data = certData(rec);
   const root = getComputedStyle(document.documentElement);
   const tok = (n) => root.getPropertyValue(n).trim();
@@ -154,11 +155,11 @@ export async function makeCertificatePng(rec) {
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* 글꼴 대기 실패는 무시 */ }
 
   const canvas = document.createElement('canvas');
-  canvas.width = W * SCALE;
-  canvas.height = H * SCALE;
+  canvas.width = Math.round(W * scale);
+  canvas.height = Math.round(H * scale);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas 없음');
-  ctx.scale(SCALE, SCALE);
+  ctx.scale(scale, scale);
   ctx.textBaseline = 'middle';
   const spacing = (px) => { if ('letterSpacing' in ctx) ctx.letterSpacing = px; };
   const text = (t, x, y, { weight = 400, size = 18, color = C.text, align = 'left' } = {}) => {
@@ -310,9 +311,12 @@ export async function makeCertificatePng(rec) {
 
   return new Promise((resolve, reject) => {
     try {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('PNG를 만들지 못함'))), 'image/png');
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('그림을 만들지 못함'))), type, quality);
     } catch (e) { reject(e); }
   });
+}
+export function makeCertificatePng(rec) {
+  return makeCertificateImage(rec);
 }
 
 // 기기에 내려받는다. 막혀서 앱이 알아챈 실패는 오류로 던진다.

@@ -1,5 +1,6 @@
 // 결과 수신 Code.gs 단위 시험: node tools/test-results.mjs
 // 가짜 스프레드시트로 doPost를 돌려 반·번호 검사, 칸 단위 덮어쓰기, 번호 순 정렬, 수식 막기, 길이 자르기, 잠금을 본다.
+// 가짜 드라이브로 수료증 그림 요청(정상, 잘못된 반·번호, 같은 이름 덮어쓰기, 폴더가 지워진 뒤)을 본다.
 import { loadResults } from './results-sim.mjs';
 
 let pass = 0;
@@ -68,6 +69,75 @@ ok(r.length === H.length && !r.includes('홍길동') && !r.includes('x@y'), '모
 ok(lockLog.length > 0 && lockLog.filter((x) => x === 'wait').length === lockLog.filter((x) => x === 'release').length, '받을 때마다 잠금을 걸고 풂');
 const busy = loadResults({ lockFails: true });
 ok(busy.post({ v: 2, cls: '2-1', num: 1, fields: { done: 1 } }) === 'busy' && busy.book.sheets.size === 0, '잠금을 못 얻으면 busy, 쓰지 않음 (학생 기기는 대기열에 두고 다시 보냄)');
+
+// ---------- 수료증 그림 (kind: 'cert') ----------
+{
+  const sim = loadResults();
+  const { drive } = sim;
+  const jpeg = (tag) => Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]), Buffer.from('JFIF-시험 그림 ' + tag + ' '.repeat(20)), Buffer.from([0xFF, 0xD9])]).toString('base64');
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), Buffer.alloc(40, 1)]).toString('base64');
+  const cert = (cls, num, data = jpeg('a'), type = 'image/jpeg') => sim.post({ v: 2, kind: 'cert', cls, num, type, data });
+  const root = () => drive.live('Lesson 8 수료증');
+  const files = (cls) => (root() && root().live(cls) ? root().live(cls).liveFiles() : []);
+  const b64 = (f) => Buffer.from(f.bytes.map((b) => (b + 256) % 256)).toString('base64');
+
+  // 정상
+  ok(cert('2-3', 14) === 'ok', '그림 정상: ok');
+  ok(root() && root().live('2-3') && files('2-3').map((f) => f.name).join() === '2-3반_14번.jpg', '내 드라이브/Lesson 8 수료증/2-3/2-3반_14번.jpg로 저장 (폴더가 없으면 만듦)');
+  ok(files('2-3')[0].type === 'image/jpeg' && b64(files('2-3')[0]) === jpeg('a'), '저장한 파일 내용·형식이 보낸 그림과 같음');
+  ok(sim.book.sheets.size === 0, '그림 요청은 결과 시트에 아무것도 쓰지 않음');
+  ok(cert('2-6', 1) === 'ok' && files('2-6').map((f) => f.name).join() === '2-6반_1번.jpg' && drive.folders.filter((f) => f.name === 'Lesson 8 수료증').length === 1, '반 폴더(2-6)를 더 만들어도 맨 위 폴더는 하나');
+  ok(cert('2-1', 40) === 'ok' && cert('2-1', 1) === 'ok' && files('2-1').map((f) => f.name).sort().join() === '2-1반_1번.jpg,2-1반_40번.jpg', '같은 반 다른 번호는 따로 저장');
+
+  // 잘못된 반·번호, 잘못된 그림
+  const before = JSON.stringify(drive);
+  ok(cert('2-7', 3) === 'rejected', '반 목록에 없는 반(2-7)은 받지 않음');
+  ok(cert('3-1', 3) === 'rejected' && cert('', 3) === 'rejected', '3-1, 빈 반은 받지 않음');
+  ok(cert('2-3', 0) === 'rejected' && cert('2-3', 41) === 'rejected' && cert('2-3', 2.5) === 'rejected' && cert('2-3', '열넷') === 'rejected', '번호 0, 41, 2.5, 글자는 받지 않음');
+  ok(cert('2-3', 14, Buffer.from('<html>그림 아님</html>'.repeat(3)).toString('base64')) === 'rejected', '그림 머리가 아닌 파일은 받지 않음');
+  ok(cert('2-3', 14, jpeg('a'), 'text/html') === 'rejected' && cert('2-3', 14, png, 'image/png') === 'rejected' && cert('2-3', 14, png, 'image/jpeg') === 'rejected', '형식이 JPEG가 아니거나(PNG 포함) 머리가 JPEG가 아니면 받지 않음');
+  ok(cert('2-3', 14, '%%%') === 'rejected' && cert('2-3', 14, 123) === 'rejected', '망가진 base64·글자가 아닌 그림은 받지 않음');
+  const big = Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF]), Buffer.alloc(1024 * 1024)]).toString('base64');
+  ok(cert('2-3', 14, big) === 'rejected', '1MB를 넘는 그림은 받지 않음');
+  ok(JSON.stringify(drive) === before, '받지 않은 요청은 드라이브를 바꾸지 않음');
+  ok(sim.post({ v: 2, kind: 'cert', cls: '2-3', num: 14, type: 'image/jpeg', data: jpeg('a'), fields: { done: 6 } }) === 'ok' && sim.book.sheets.size === 0, '그림 요청에 fields가 붙어 와도 시트에는 쓰지 않음');
+
+  // 같은 이름 덮어쓰기: 이전 파일은 휴지통, 새 파일 하나
+  const dir = root().live('2-3');
+  const n0 = dir.files.length;
+  ok(cert('2-3', 14, jpeg('b')) === 'ok', '같은 학생 다시 보냄: ok');
+  const live = dir.liveFiles('2-3반_14번.jpg');
+  ok(live.length === 1 && b64(live[0]) === jpeg('b'), '같은 이름: 새 그림 하나만 남음');
+  ok(dir.files.length === n0 + 1 && dir.files.filter((f) => f.name === '2-3반_14번.jpg' && f.trashed).length === n0, '같은 이름: 이전 파일은 휴지통으로 옮김');
+
+  // 교사가 폴더를 통째로 지운 뒤 (휴지통에 있음)
+  root().setTrashed(true);
+  ok(cert('2-3', 14, jpeg('c')) === 'ok', '폴더를 휴지통으로 옮긴 뒤 받음: ok');
+  ok(drive.folders.filter((f) => f.name === 'Lesson 8 수료증').length === 2 && root() && files('2-3').length === 1 && files('2-1').length === 0, '휴지통의 폴더는 쓰지 않고 새 폴더·반 폴더를 만들어 저장');
+  // 휴지통까지 비운 뒤 (영구 삭제)
+  drive.folders.forEach((f) => f.setTrashed(true));
+  drive.purge();
+  ok(drive.folders.length === 0 && cert('2-5', 7) === 'ok' && root() && files('2-5').map((f) => f.name).join() === '2-5반_7번.jpg', '휴지통을 비운 뒤에도 다시 받으면 폴더를 새로 만듦');
+  // 반 폴더만 지운 경우
+  root().live('2-5').setTrashed(true);
+  ok(cert('2-5', 8) === 'ok' && files('2-5').map((f) => f.name).join() === '2-5반_8번.jpg', '반 폴더만 지운 뒤에도 반 폴더를 새로 만듦');
+
+  // 결과 시트 기능은 그대로
+  ok(sim.post({ v: 2, cls: '2-3', num: 14, fields: { done: 6 } }) === 'ok' && sim.book.getSheetByName('2-3').rows.length === 2, '그림을 받은 뒤에도 결과 시트는 그대로 동작');
+  const busy = loadResults({ lockFails: true });
+  ok(busy.post({ v: 2, kind: 'cert', cls: '2-3', num: 14, type: 'image/jpeg', data: jpeg('a') }) === 'busy' && busy.drive.folders.length === 0, '그림도 잠금을 못 얻으면 busy, 저장하지 않음');
+}
+
+// 편집기에서 실행하는 certCheck: 폴더와 반 폴더 6개를 만들고, 다시 실행해도 늘지 않으며, 학생 그림은 만들지 않음
+{
+  const sim = loadResults();
+  sim.ctx.certCheck();
+  sim.ctx.certCheck();
+  const root = sim.drive.live('Lesson 8 수료증');
+  ok(sim.drive.folders.length === 1 && root && root.folders.map((f) => f.name).join() === '2-1,2-2,2-3,2-4,2-5,2-6' && root.folders.every((f) => f.files.length === 0), 'certCheck: 폴더 하나와 반 폴더 2-1~2-6, 두 번 실행해도 그대로, 파일 없음');
+  ok(sim.logs.length === 2 && sim.logs[0].startsWith('수료증 폴더: Lesson 8 수료증 (반 폴더 6개) https://'), 'certCheck: 로그에 폴더 주소');
+  ok(sim.post({ v: 2, kind: 'cert', cls: '2-4', num: 9, type: 'image/jpeg', data: Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]), Buffer.alloc(30)]).toString('base64') }) === 'ok' && root.live('2-4').liveFiles().map((f) => f.name).join() === '2-4반_9번.jpg', 'certCheck로 만든 폴더에 이어서 저장');
+}
 
 console.log(`끝: 통과 ${pass}, 실패 ${fail}`);
 process.exit(fail ? 1 : 0);

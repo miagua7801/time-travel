@@ -3,7 +3,8 @@
 // - 보낼 때 D 번호 자리에 문장을 채운다. 방식: POST, 본문은 JSON 글자(text/plain). 응답이 'ok'면 대기열에서 지운다.
 // - 실패는 화면에 알리지 않는다. 대기열에 남겨 두었다가 다음 전송 때 함께 보낸다.
 // - 결과 전송 주소(config.js의 RESULT_URL)가 비어 있으면 아무것도 보내지 않는다.
-import { loadOutbox, saveOutbox, hasReport } from './state.js';
+import { loadOutbox, saveOutbox, loadCertOutbox, saveCertOutbox, hasReport } from './state.js';
+import { makeCertificateImage } from './parts/certimage.js';
 import { line } from './text.js';
 import { getStory } from './content.js';
 import { RESULT_URL, NOTEBOOK_LIMIT } from '../data/config.js';
@@ -89,14 +90,72 @@ export async function flush() {
         }
       }
     }
+    await flushCerts();
   } finally {
     sending = false;
   }
   if (again) { again = false; flush(); }
 }
 
-async function post(entry) {
-  const body = JSON.stringify({ v: entry.v, cls: entry.cls, num: entry.num, fields: expandFields(entry.fields) });
+// ----- 수료증 그림 (교사용 복사본, 스토리보드 S10 '수료증 저장') -----
+// 단서 수첩을 처음 보고한 직후 한 번, "수료증 저장"을 누를 때마다 보낸다. 학생 화면에는 알리지 않는다.
+// 내려받는 PNG와 같은 그림(교과서 문장 없음)을 1366×768 JPEG로 만든다. 1MB를 넘지 않게 화질·크기를 줄여 본다.
+// 대기열(tt8:v2:certout)에는 반·번호마다 가장 최근 그림 하나만 둔다. 실패하면 남겨 두었다가 다음 전송 때 다시 보낸다.
+export const CERT_MAX_BYTES = 1024 * 1024;
+const CERT_TRIES = [[1, 0.85], [1, 0.7], [1, 0.55], [0.75, 0.6]];
+
+function blobBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).replace(/^data:[^,]*,/, ''));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+// 보낼 그림 { type, data(base64), bytes, width }. 1MB 안에 들지 않으면 null
+export async function certUpload(rec) {
+  for (const [scale, quality] of CERT_TRIES) {
+    const blob = await makeCertificateImage(rec, { scale, type: 'image/jpeg', quality });
+    if (blob.size <= CERT_MAX_BYTES && blob.type === 'image/jpeg') {
+      return { type: blob.type, data: await blobBase64(blob), bytes: blob.size, width: Math.round(1366 * scale) };
+    }
+  }
+  return null;
+}
+
+export async function queueCertificate(rec) {
+  if (!RESULT_URL || !hasReport(rec)) return false;
+  let img = null;
+  try { img = await certUpload(rec); } catch (e) { img = null; }
+  if (!img) return false;
+  const out = loadCertOutbox();
+  out[`${rec.cls}:${rec.num}`] = { v: 2, kind: 'cert', cls: rec.cls, num: rec.num, type: img.type, data: img.data, t: Date.now() };
+  // 저장 공간이 모자라면 기기에는 못 두지만 이번 접속 동안은 메모리에 남아 보낸다
+  const saved = saveCertOutbox(out);
+  flush();
+  return saved;
+}
+
+async function flushCerts() {
+  const out = loadCertOutbox();
+  for (const [key, entry] of Object.entries(out)) {
+    const result = await postBody(JSON.stringify({ v: entry.v, kind: 'cert', cls: entry.cls, num: entry.num, type: entry.type, data: entry.data }));
+    if (result === 'ok' || result === 'rejected') {
+      const now = loadCertOutbox();
+      if (now[key] && now[key].t === entry.t) {
+        delete now[key];
+        saveCertOutbox(now);
+      }
+    }
+  }
+}
+
+function post(entry) {
+  return postBody(JSON.stringify({ v: entry.v, cls: entry.cls, num: entry.num, fields: expandFields(entry.fields) }));
+}
+
+async function postBody(body) {
   const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = ctrl ? setTimeout(() => ctrl.abort(), TIMEOUT_MS) : 0;
   try {
