@@ -97,6 +97,8 @@ export function renderMap(root, { go, app }) {
     onLeave(() => rule.destroy());
     bar.append(rule.wrap);
   }
+  // 단서 수첩을 보고한 뒤: 되감기 길 지도(S11)로 돌아가 단서를 다시 담고 고쳐 다시 보고할 수 있다. 보고 전에는 없다.
+  if (rec.flags.reported && rec.flags.ended) bar.append(button('btn.rewind', () => go('s11'), 'small'));
   bar.append(button('btn.replayVideo', () => go('s1', { replay: true, back: 's4' }), 'small'));
   // 사용법: 장면 1 위에서 장비 점검을 다시 본다 ("건너뛰기" 있음)
   bar.append(button('btn.howto', () => go('s5', { n: 1, guide: 'again' }), 'small'));
