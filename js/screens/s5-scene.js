@@ -36,13 +36,24 @@ export function renderScene(root, { go, app, opts, name }) {
 
   let past = null;  // 다시 보기로 연 앞 장면
   let back = null;  // 지금 장면으로 돌아올 때 포커스를 돌려줄 단추
-  const now = buildScene(n, { app, go, mode, again, backTo, openPast: mode === 'live' ? openPast : null });
+  // 맨 위 장면 번호(스토리보드 장면 화면 '맨 위 장면 번호'): 마친 장면 번호를 누르면 그 장면으로 간다.
+  //   풀고 있는 장면 → '이전 장면'과 같은 다시 보기(past). "지금 장면"으로 돌아오며 고르던 상태는 그대로.
+  //   길 지도에서 연 다시 보기 → 그 장면 다시 보기. "길 지도"는 처음 들어온 곳(S4 또는 되감기 길 지도)으로.
+  //   되감기 → ☆가 있는 되감기 장면. 장면 6은 보고 뒤에만(되감기 길 지도의 장면 6 칸과 같은 다시 보기).
+  const inRewind = mode === 'rewind' || backTo === 's11';
+  const jumps = mode === 'live'
+    ? { can: (m) => rec.done.includes(m), to: (m, from) => openPast(m, from) }
+    : inRewind
+      ? { can: (m) => m <= 5 || rec.flags.reported, to: (m) => go('s5', m === 6 ? { n: 6, back: 's11' } : { n: m, rewind: true }) }
+      : { can: (m) => rec.done.includes(m), to: (m) => go('s5', { n: m }) };
+  const now = buildScene(n, { app, go, mode, again, backTo, jumps });
   root.append(now.box);
 
   function openPast(m, from) {
     if (past) { past.destroy(); past.box.remove(); }
     else { back = from || null; now.pause(); now.box.hidden = true; }
-    past = buildScene(m, { app, go, mode: 'past', nowN: n, openPast, onNow: backToNow });
+    past = buildScene(m, { app, go, mode: 'past', nowN: n, onNow: backToNow,
+      jumps: { can: (k) => k === n || rec.done.includes(k), to: (k, el2) => (k === n ? backToNow() : openPast(k, el2)) } });
     root.append(past.box);
     past.focus.focus({ preventScroll: true });
   }
@@ -67,7 +78,7 @@ export function renderScene(root, { go, app, opts, name }) {
 }
 
 // 장면 하나. mode: 'live'(풀고 있는 장면) · 'replay'(길 지도에서 연 마친 장면) · 'rewind'(되감기) · 'past'(이전 장면 다시 보기)
-function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast = null, onNow = null, nowN = 0 }) {
+function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = null, onNow = null, nowN = 0 }) {
   const scene = SCENES[n - 1];
   const data = getScene(n);
   const rec = app.rec;
@@ -84,17 +95,21 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
   let shown6 = false;
 
   // ----- 맨 위 띠: 길 지도 칸 6개 + 장면 이름 -----
-  // 풀고 있는 장면과 이전 장면 다시 보기에서는 마친 장면 칸을 눌러 그 장면을 다시 볼 수 있다.
+  // 칸은 모두 단추다. 갈 수 있는 칸(data-go)은 눌러서 그 장면으로, 지금 장면 칸은 강조만(aria-current),
+  // 아직 열지 않은 칸은 눌리지 않는다(aria-disabled, Tab으로 가지 않음). 장비 점검 중의 누름 막기는 guide.js가 한다.
   const steps = el('ol', { className: 'steps' }, ...SCENES.map((s) => {
     const done = rec.done.includes(s.n);
-    const canGo = openPast && s.n !== n && (done || s.n === nowN);
-    const step = canGo ? el('button', { type: 'button', className: 'step', textContent: String(s.n) }) : el('span', { className: 'step', textContent: String(s.n) });
+    const canGo = Boolean(jumps) && s.n !== n && jumps.can(s.n);
+    const step = el('button', { type: 'button', className: 'step', textContent: String(s.n) });
+    step.setAttribute('aria-label', line(`scene.${s.n}.name`));
     if (done) step.classList.add('is-done');
     if (s.n === n) { step.classList.add('is-now'); step.setAttribute('aria-current', 'step'); }
     if (canGo) {
-      step.setAttribute('aria-label', line(`scene.${s.n}.name`));
       step.dataset.go = String(s.n);
-      step.addEventListener('click', () => { if (s.n === nowN) onNow(); else openPast(s.n, step); });
+      step.addEventListener('click', () => { endHint(); jumps.to(s.n, step); });
+    } else if (s.n !== n) {
+      step.setAttribute('aria-disabled', 'true');
+      step.tabIndex = -1;
     }
     return el('li', {}, step);
   }));
@@ -236,8 +251,8 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', openPast =
   const slot = el('div', { className: 'ask-slot' });
   let prevWrap = null;
   let prev = null;
-  if (live && openPast && n >= 2 && rec.done.includes(n - 1)) {
-    prev = button('btn.prevScene', () => { endHint(); openPast(n - 1, prev); }, 'small');
+  if (live && jumps && n >= 2 && rec.done.includes(n - 1)) {
+    prev = button('btn.prevScene', () => { endHint(); jumps.to(n - 1, prev); }, 'small');
     prevWrap = el('div', { className: 'ask-prev' }, prev);
   }
   const panel = el('div', { className: 'ask-panel' }, slot);

@@ -18,6 +18,7 @@ tools/shot-sign.mjs
 tools/shot-gloss.mjs
 tools/shot-rewindcue.mjs
 tools/shot-certsend.mjs
+tools/shot-jump.mjs
 
 # 교과서 본문·출판사 음성·뉴스 원본, 기획 문서. 절대 커밋하지 않는다.
 private/

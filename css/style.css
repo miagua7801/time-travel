@@ -478,8 +478,13 @@ button.trip.dim { opacity: 0.45; }
 }
 .step.is-done::after { content: " ✓"; white-space: pre; }
 .step.is-now { border: 3px solid var(--accent); background: var(--accent); color: var(--on-accent); }
-/* 눌러서 그 장면을 다시 볼 수 있는 칸 (풀고 있는 장면·이전 장면 다시 보기의 맨 위 띠) */
-button.step { min-height: 32px; font-size: 18px; border-color: var(--text); color: var(--text); background: var(--bg); }
+/* 칸은 모두 단추. 눌리지 않는 칸(지금 장면·아직 안 연 장면)은 위 모양 그대로 */
+button.step { position: relative; min-height: 32px; font-size: 18px; cursor: default; }
+/* 누르는 영역은 보이는 칸보다 넓게: 높이 44px (겉모양 크기는 그대로) */
+button.step::before { content: ""; position: absolute; left: -2px; right: -2px; top: -8px; bottom: -8px; }
+/* 눌러서 그 장면으로 갈 수 있는 칸 (맨 위 장면 번호) */
+button.step[data-go] { border-color: var(--text); color: var(--text); background: var(--bg); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+button.step[data-go]:hover, button.step[data-go]:focus-visible { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 button.step.is-now { border-color: var(--accent); color: var(--on-accent); background: var(--accent); }
 .scene-name { margin: 0; font-size: 22px; }
 .scene-mid {
