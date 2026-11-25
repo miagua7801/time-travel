@@ -37,9 +37,15 @@ export function renderReport(root, { go, app }) {
   const take = () => {
     const picked = radios.find((r) => r.checked);
     const n = Number(num.value);
-    if (!picked || !num.value || !Number.isInteger(n) || n < NUMBER_MIN || n > NUMBER_MAX) {
+    if (!picked || !num.value) {
       status.replaceChildren(say('s3.need'));
       (picked ? num : radios[0]).focus();
+      return false;
+    }
+    // 번호가 범위 밖일 때만 범위 문구 (비었을 때는 위의 문구)
+    if (!Number.isInteger(n) || n < NUMBER_MIN || n > NUMBER_MAX) {
+      status.replaceChildren(say('s3.range'));
+      num.focus();
       return false;
     }
     rec.cls = picked.value;

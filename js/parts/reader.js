@@ -225,10 +225,11 @@ export function makeReader(scene, opts) {
       r.row.classList.add('picked');
       r.row.scrollIntoView({ block: 'nearest' });
     },
-    setSound(ok) {
+    // canPlay(d): 그 문장의 소리가 하나라도 있으면 true. 깨진 덩어리만 있는 문장은 ▷를 흐리게 한다.
+    setSound(ok, canPlay) {
       body.classList.toggle('no-sound', !ok);
       listen.disabled = !ok;
-      for (const r of rows.values()) r.play.disabled = !ok;
+      for (const [d, r] of rows) r.play.disabled = !ok || Boolean(canPlay && !canPlay(d));
     },
     destroy() {
       if (rule) rule.destroy();

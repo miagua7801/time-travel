@@ -37,16 +37,17 @@ export async function loadSceneAudio(n) {
   if (my !== loading || !pack) return false;
   const bufs = new Map();
   const eds = new Map();
-  try {
-    await Promise.all(pack.ids.map(async (id) => {
+  // 파일마다 따로 푼다. 깨진 덩어리는 건너뛰고 나머지는 쓴다 (깨진 덩어리는 hasSound가 false).
+  await Promise.all(pack.ids.map(async (id) => {
+    try {
       const bytes = pack.get(id);
+      if (!bytes) return;
       const buf = await ac.decodeAudioData(bytes.buffer);
       bufs.set(id, buf);
       eds.set(id, quietEdges(buf));
-    }));
-  } catch (e) {
-    return false;
-  }
+    } catch (e) { /* 이 덩어리만 건너뜀 */ }
+  }));
+  if (!bufs.size) return false;
   if (my !== loading) return false;
   buffers = bufs;
   edges = eds;
@@ -79,22 +80,23 @@ export const hasSound = (id) => buffers.has(id);
 // 덩어리들을 순서대로 끊김 없이 튼다.
 //   pause(i)       i번째 덩어리 앞의 쉼(밀리초). 숫자면 두 파일 사이의 조용한 구간을 건너뛰고 그만큼만 쉰다. null이면 파일을 그대로 잇는다.
 //   onStep(i, id)  i번째 덩어리가 시작될 때
+//   i는 언제나 넘겨받은 ids 안의 순번이다. 소리가 없는(깨진) 덩어리는 건너뛰지만 순번은 그대로 둔다.
 //   onEnd(done)    끝까지 틀었으면 true, 도중에 멈췄으면 false
 export function play(ids, { pause, onStep, onEnd } = {}) {
   stop();
   const ac = audioContext();
-  const list = ids.filter((id) => buffers.has(id));
+  const list = ids.map((id, k) => ({ id, k })).filter((x) => buffers.has(x.id));
   if (!ac || !list.length) { if (onEnd) onEnd(false); return false; }
   if (ac.state === 'suspended') ac.resume().catch(() => {});
 
   let at = ac.currentTime + 0.08;
   const plan = [];
   const pauseAt = (i) => { const p = pause ? pause(i) : null; return typeof p === 'number' ? p / 1000 : null; };
-  const sources = list.map((id, i) => {
+  const sources = list.map(({ id, k }, i) => {
     const buf = buffers.get(id);
     const e = edges.get(id);
-    const before = i > 0 ? pauseAt(i) : null;
-    const after = i < list.length - 1 ? pauseAt(i + 1) : null;
+    const before = i > 0 ? pauseAt(k) : null;
+    const after = i < list.length - 1 ? pauseAt(list[i + 1].k) : null;
     const cutHead = before !== null ? Math.max(0, e.head - GUARD) : 0;
     const cutTail = after !== null ? Math.max(0, e.tail - GUARD) : 0;
     const dur = Math.max(0.05, buf.duration - cutHead - cutTail);
@@ -106,7 +108,7 @@ export function play(ids, { pause, onStep, onEnd } = {}) {
     src.buffer = buf;
     src.connect(ac.destination);
     src.start(at, cutHead, dur);
-    plan.push({ id, at, dur, keptHead, keptTail });
+    plan.push({ id, k, at, dur, keptHead, keptTail });
     at += dur;
     return src;
   });
@@ -123,7 +125,7 @@ export function play(ids, { pause, onStep, onEnd } = {}) {
     while (i + 1 < plan.length && now >= plan[i + 1].at) i++;
     if (i !== step) {
       step = i;
-      if (onStep) onStep(i, plan[i].id);
+      if (onStep) onStep(plan[i].k, plan[i].id);
     }
     if (now >= endAt) finish(true);
   };

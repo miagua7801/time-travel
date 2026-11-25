@@ -66,6 +66,7 @@ export const COPY = {
   // ---------- S3 반·번호 보고 ----------
   's3.ask': { voice: 'hq', text: '소속을 보고하라.' },
   's3.need': { voice: 'hq', text: '반과 번호가 필요하다.' },
+  's3.range': { voice: 'hq', text: '번호는 1~40으로 보고하라.' },
   's3.mission': { voice: 'hq', text: '임무: 가이드 Travis를 따라가라. 고객 Eckels를 지켜보라.' },
   's3.mission2': { voice: 'hq', text: '추가 임무: 결말을 미리 알려 주는 문장을 찾아라. 결말은 누구에게도 말하지 마라.' },
   's3.cls': { voice: 'label', text: '반' },

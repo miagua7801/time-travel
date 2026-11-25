@@ -230,8 +230,28 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = nu
       reader.listen.dataset.copy = 'btn.stop';
     }
   });
-  // 소리 묶음을 못 받으면 듣기 단추는 흐린 채로 두고 읽기는 그대로 진행한다
+  // 소리 묶음을 못 받으면 듣기 단추는 흐린 채로 두고 읽기는 그대로 진행한다.
+  // 그동안 조용히 다시 받는다: 인터넷이 다시 이어질 때, 그리고 10초·20초·40초·60초…마다. 받으면 듣기 단추가 살아난다.
+  let retryTimer = 0;
+  let retryWait = 10000;
+  const RETRY_MAX = 60000;
+  function clearRetry() {
+    clearTimeout(retryTimer);
+    retryTimer = 0;
+    try { window.removeEventListener('online', retryNow); } catch (e) { /* 무시 */ }
+  }
+  function retryNow() {
+    clearRetry();
+    if (alive && !paused && box.dataset.sound === 'none') loadSound();
+  }
+  function scheduleRetry() {
+    clearRetry();
+    retryTimer = setTimeout(retryNow, retryWait);
+    retryWait = Math.min(retryWait * 2, RETRY_MAX);
+    try { window.addEventListener('online', retryNow); } catch (e) { /* 무시 */ }
+  }
   function loadSound() {
+    clearRetry();
     ready = false;
     reader.setSound(false);
     if (tv) tv.disabled = true;
@@ -239,9 +259,11 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = nu
     loadSceneAudio(n).then((ok) => {
       if (!alive || paused) return;
       ready = ok;
-      reader.setSound(ok);
+      reader.setSound(ok, (d) => (chunksOf.get(d) || []).some(hasSound));
       if (tv) tv.disabled = !(ok && hasSound(scene.tv));
       box.dataset.sound = ok ? 'ok' : 'none';
+      if (ok) retryWait = 10000;
+      else scheduleRetry();
     });
   }
 
@@ -524,6 +546,7 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = nu
     // 이전 장면을 보러 갈 때: 소리를 멈추고 감춘다. 묻기·타이머는 그대로 둔다.
     pause() {
       paused = true;
+      clearRetry();
       stop();
       reader.closeGloss();
       savedTop = reader.body.scrollTop;
@@ -536,6 +559,7 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = nu
     },
     destroy() {
       alive = false;
+      clearRetry();
       document.removeEventListener('keydown', onKey);
       if (guide) guide.end();
       if (fullHint) fullHint.end();

@@ -45,8 +45,38 @@ export const app = {
 
 const screenEl = document.getElementById('screen');
 
+// 누름으로 화면이 바뀐 직후, 같은 누름이 새 화면의 단추에 닿는 것을 막는다.
+//   마우스·터치: 두 번 누르기(더블클릭)의 두 번째 누름 — 화면이 바뀐 뒤 SWITCH_GUARD_MS 동안의 누름을 무시한다.
+//   키보드: Enter·Space·숫자 키를 누른 채로 있어 반복되는 입력 — 그 키를 뗄 때까지 반복 입력을 무시한다.
+// 시간이 되어 저절로 바뀐 화면(영상 끝, 장면 완료 등)에는 걸지 않는다. 학생이 실제로 누른 것(isTrusted)만 본다.
+const SWITCH_GUARD_MS = 400;
+const ACT_KEY = (k) => k === 'Enter' || k === ' ' || /^[0-9]$/.test(k);
+let lastInput = { kind: '', key: '', t: -1e9 };
+let pointerGuardUntil = 0;
+let heldKey = '';
+function guardInput(e) {
+  if (!e.isTrusted) return;
+  const now = performance.now();
+  if (e.type === 'keyup') { if (e.key === heldKey) heldKey = ''; return; }
+  if (e.type === 'keydown') {
+    if (heldKey && e.repeat && e.key === heldKey) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    if (ACT_KEY(e.key)) lastInput = { kind: 'key', key: e.key, t: now };
+    return;
+  }
+  if (e.type === 'click' && e.detail === 0) return; // Enter·Space로 누른 단추의 click (위의 키 입력이 맡음)
+  if (now < pointerGuardUntil) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  lastInput = { kind: 'pointer', key: '', t: now };
+}
+for (const t of ['click', 'pointerdown', 'keydown', 'keyup']) window.addEventListener(t, guardInput, true);
+function armGuard() {
+  if (performance.now() - lastInput.t > 100) return; // 누름 때문에 바뀐 화면이 아님
+  if (lastInput.kind === 'pointer') pointerGuardUntil = performance.now() + SWITCH_GUARD_MS;
+  else heldKey = lastInput.key;
+}
+
 // 화면을 바꾸고 그 화면의 첫 문구(또는 돌려준 요소)로 포커스를 옮긴다
 export function go(name, opts = {}) {
+  armGuard();
   runLeave();
   const render = SCREENS[name] || renderSoon;
   document.body.classList.toggle('dark', DARK.has(name));
