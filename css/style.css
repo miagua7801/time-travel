@@ -61,6 +61,10 @@ body.dark {
 }
 /* 포커스 테두리 색은 그 둘레의 바탕을 따른다: 검은 화면 안의 흰 상자는 진한 주황, 어둡게 덮은 막 위의 문구는 밝은 주황 */
 body.dark .tbc-ask { --ring: var(--focus-on-light); }
+/* 마우스·터치로 쓰는 중에는 포커스 테두리를 그리지 않는다. 키보드(Tab 등)를 누르면 다시 보인다 (main.js가 data-input을 바꾼다) */
+html[data-input="pointer"] :focus-visible,
+html[data-input="pointer"] [tabindex="-1"]:focus,
+html[data-input="pointer"] .pill-input:focus-visible + .pill { outline: none; }
 .guide-tip:not(.no-dim) { --ring: var(--focus); }
 /* 화면이 바뀔 때 포커스를 받는 문구(누를 수 없는 것)에는 테두리를 그리지 않는다 */
 h1[tabindex="-1"]:focus,
@@ -491,11 +495,18 @@ button.step::before { content: ""; position: absolute; left: -2px; right: -2px; 
 /* 눌러서 그 장면으로 갈 수 있는 칸 (맨 위 장면 번호) */
 button.step[data-go] { border-color: var(--text); color: var(--text); background: var(--bg); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
 button.step[data-go]:hover, button.step[data-go]:focus-visible { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* 마우스로 쓰는 중에는 포커스만으로 강조하지 않는다 (가리킬 때만) */
+html[data-input="pointer"] button.step[data-go]:focus-visible:not(:hover) { border-color: var(--text); box-shadow: none; }
 button.step.is-now { border-color: var(--accent); color: var(--on-accent); background: var(--accent); }
 .scene-name { margin: 0; font-size: 22px; }
 .scene-mid {
   flex: 1;
   min-height: 0;
+  /* 그림 칸의 크기를 이 칸의 너비·높이(cqw·cqh)로 정한다 */
+  container-type: size;
+  /* 그림 한 변: 왼쪽 열 너비(1fr:2fr의 1)와 남은 높이 중 작은 쪽. 정사각형을 지켜 그림이 잘리지 않게 한다 */
+  --pic-col: calc((100cqw - var(--s3)) / 3);
+  --pic-side: min(var(--pic-col), 100cqh);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   grid-template-rows: minmax(0, 1fr);
@@ -508,9 +519,7 @@ button.step.is-now { border-color: var(--accent); color: var(--on-accent); backg
   align-self: start;
   justify-self: center;
   aspect-ratio: 1;
-  width: 100%;
-  max-width: 100%;
-  max-height: 100%;
+  width: var(--pic-side);
   overflow: hidden;
   border-radius: var(--radius);
 }
@@ -531,9 +540,9 @@ button.step.is-now { border-color: var(--accent); color: var(--on-accent); backg
   overflow: hidden;
   pointer-events: none;
 }
-/* 장면 1·6: 그림 아래 여백에 "뉴스" TV 단추를 그림 너비만큼 둔다. 그림은 남은 높이에 맞춰 줄어든다. */
-.scene-left { min-height: 0; display: flex; flex-direction: column; gap: var(--s1); }
-.scene-left .scene-pic { flex: 0 1 auto; min-height: 0; }
+/* 장면 1·6: 그림 아래 여백에 "뉴스" TV 단추를 그림 너비만큼 둔다. 그림은 TV 단추(56px)와 틈을 뺀 남은 높이에 맞춰 줄어든다. */
+.scene-left { --pic-side: min(var(--pic-col), 100cqh - 56px - var(--s1)); width: var(--pic-side); justify-self: center; min-height: 0; display: flex; flex-direction: column; gap: var(--s1); }
+.scene-left .scene-pic { flex: none; }
 /* 뉴스 TV 단추 (시안 A: 파란 바탕 + 흰 글자. 재생 중에는 검은 바탕) */
 .tv {
   flex: none;
@@ -982,7 +991,7 @@ button.sign-word.fixed { color: var(--text); border-bottom-color: transparent; o
 .cert-status .cert-hint::before { content: none; }
 /* 보고 전 "되감기": 1초 빛난 뒤 강조색 테두리로 남는다 (반복 없음) */
 .cert-buttons button.cue { outline: 3px solid var(--accent); outline-offset: 3px; animation: cue-glow 1s ease-out; }
-.cert-buttons button.cue:focus-visible { outline-color: var(--ring); }
+html[data-input="keyboard"] .cert-buttons button.cue:focus-visible { outline-color: var(--ring); }
 /* 되감기 안내(z-index 5·6)가 떠 있어도 카드 보기 창이 그 위에 온다 */
 .cert .cards-view { z-index: 7; }
 @keyframes cue-glow {

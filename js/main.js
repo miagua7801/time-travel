@@ -54,6 +54,17 @@ const ACT_KEY = (k) => k === 'Enter' || k === ' ' || /^[0-9]$/.test(k);
 let lastInput = { kind: '', key: '', t: -1e9 };
 let pointerGuardUntil = 0;
 let heldKey = '';
+// 포커스 테두리는 키보드로 움직일 때만 보인다. 마지막 입력이 마우스·터치면 <html data-input="pointer">로 감춘다(css).
+// Chrome은 글자 칸에서 Enter를 한 번 치면 그 뒤 스크립트로 옮긴 포커스에도 테두리를 계속 그리므로, 직접 판단한다.
+// 처음에는 마우스로 본다. 글자를 쓰는 키는 바꾸지 않고, 옮기기·누르기 키(Tab, Enter, Space, 화살표, Esc, 숫자)만 키보드로 바꾼다.
+const MOVE_KEY = (k) => k === 'Tab' || k === 'Enter' || k === ' ' || k === 'Escape' || k === 'Home' || k === 'End' || k.startsWith('Arrow') || /^[0-9]$/.test(k);
+function setInput(kind) {
+  try { if (document.documentElement.dataset.input !== kind) document.documentElement.dataset.input = kind; } catch (e) { /* 무시 */ }
+}
+setInput('pointer');
+window.addEventListener('pointerdown', (e) => { if (e.isTrusted) setInput('pointer'); }, true);
+window.addEventListener('keydown', (e) => { if (e.isTrusted && MOVE_KEY(e.key)) setInput('keyboard'); }, true);
+
 function guardInput(e) {
   if (!e.isTrusted) return;
   const now = performance.now();
