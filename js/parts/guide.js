@@ -7,6 +7,9 @@
 //   'target'  가리킨 단추를 누르면 설명만 닫히거나 넘어가고 원래 동작은 일어나지 않는다. 다른 단추는 원래대로 (6·7단계)
 //   'all'     가리킨 단추를 누르면 설명만 넘어간다. 그 밖의 단추도 원래 동작을 막는다 (장비 점검 1~5단계: 소리가 한 순간도 나지 않게)
 //   가리킨 단추를 누르는 것은 click을 가장 먼저(capture) 받아 멈추므로, 단추의 원래 처리는 불리지 않는다. Enter·Space도 click으로 온다.
+// 키보드 (block 'all'): Tab·Shift+Tab은 가리킨 단추와 "건너뛰기"(있을 때) 사이에서만 돈다. 본문 줄과 다른 단추로 가지 않는다.
+//   가리킨 단추가 아직 준비되지 않았으면(소리를 받는 동안 잠긴 이어 듣기 등) 포커스는 안내 문구에 두고, 준비되는 순간 단추로 옮긴다.
+//   안내 문구에 포커스가 있을 때 밝게 남긴 곳에 본문 칸이 있으면(5단계) ↑↓·Page Up/Down·Space로 본문 칸을 굴린다.
 import { el, button } from '../ui.js';
 import { line } from '../text.js';
 
@@ -45,6 +48,7 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
   const text = el('p', { className: 'say say-hq guide-text' });
   const tip = el('div', { className: 'guide-tip' }, text);
   tip.setAttribute('role', 'status');
+  if (block === 'all') tip.tabIndex = -1; // 가리킨 단추가 준비될 때까지 포커스를 둘 곳
   if (!dim) tip.classList.add('no-dim');
   const skipBtn = skip ? button('btn.skip', () => end(false), 'small') : null;
   if (skipBtn) tip.append(skipBtn);
@@ -82,6 +86,39 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
   };
   document.addEventListener('click', onClickCapture, true);
 
+  // 키보드 가두기 (block 'all'): 지금 포커스를 둘 곳들
+  const focusTarget = () => { if (at < 0) return null; const s = steps[at]; return s.focus ? s.focus() : s.target(); };
+  const ready = (f) => Boolean(f && !f.disabled && shown(f));
+  const stops = () => {
+    const f = focusTarget();
+    const list = [ready(f) ? f : (shown(tip) && !tip.hidden ? tip : null)];
+    if (skipBtn && !skipBtn.hidden && shown(skipBtn)) list.push(skipBtn);
+    return list.filter(Boolean);
+  };
+  const SCROLL_KEYS = { ArrowDown: 0.15, ArrowUp: -0.15, PageDown: 0.85, PageUp: -0.85, ' ': 0.85 };
+  const onKeyCapture = (e) => {
+    if (over || closing || block !== 'all' || at < 0 || !host.isConnected || host.hidden) return;
+    if (e.key === 'Tab' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const list = stops();
+      if (!list.length) return;
+      const i = list.indexOf(document.activeElement);
+      const next = i < 0 ? (e.shiftKey ? list[list.length - 1] : list[0]) : list[(i + (e.shiftKey ? -1 : 1) + list.length) % list.length];
+      next.focus({ preventScroll: true });
+      return;
+    }
+    // 안내 문구에 포커스: 밝게 남긴 본문 칸을 굴린다 (5단계에서 본문 끝까지 내려야 "다 읽었다"가 켜진다)
+    if (document.activeElement === tip && e.key in SCROLL_KEYS) {
+      const s = steps[at];
+      const h = s.hole ? s.hole() : null;
+      const scroller = h && (h.matches('.reader-body') ? h : h.querySelector('.reader-body'));
+      if (!scroller) return;
+      e.preventDefault();
+      scroller.scrollBy({ top: scroller.clientHeight * (e.shiftKey && e.key === ' ' ? -SCROLL_KEYS[e.key] : SCROLL_KEYS[e.key]) });
+    }
+  };
+  if (block === 'all') document.addEventListener('keydown', onKeyCapture, true);
+
   function begin(i) {
     while (i < steps.length && steps[i].skip && steps[i].skip()) i++;
     if (i >= steps.length) { end(true); return; }
@@ -105,11 +142,12 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
   // 키보드로 조작 중이면 가리킨 단추로 포커스를 옮긴다. 단추가 잠겨 있으면 준비되는 순간 옮긴다(tick에서 다시 본다).
   function tryFocus() {
     if (!focusPending || !keyboard || at < 0) return; // 그사이 마우스로 바꿨으면 옮기지 않는다
-    const s = steps[at];
-    const f = s.focus ? s.focus() : s.target();
-    if (f && !f.disabled && shown(f)) {
+    const f = focusTarget();
+    if (ready(f)) {
       f.focus({ preventScroll: true });
       focusPending = false;
+    } else if (block === 'all' && document.activeElement !== tip && !(skipBtn && document.activeElement === skipBtn) && shown(tip) && !tip.hidden) {
+      tip.focus({ preventScroll: true }); // 준비될 때까지 안내 문구에 (본문 줄로 가지 않게)
     }
   }
 
@@ -242,6 +280,7 @@ export function makeGuide(host, { steps, skip = false, block = 'none', done = nu
     clearTimeout(autoTimer);
     clearTimeout(doneTimer);
     document.removeEventListener('click', onClickCapture, true);
+    document.removeEventListener('keydown', onKeyCapture, true);
     cover.remove();
     tip.remove();
     delete host.dataset.guide;
