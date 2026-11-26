@@ -213,10 +213,12 @@ export function makeReader(scene, opts) {
       r.row.scrollIntoView({ block: 'nearest' });
       setTimeout(() => r.row.classList.remove('flash'), 1000);
     },
-    // 문장 고르기: fn이 있으면 ☆가 fn(d)를 부른다. null이면 끝.
+    // 문장 고르기: fn이 있으면 ☆가 fn(d)를 부른다. null이면 끝. 첫 ☆ 단추를 돌려준다(키보드로 바로 가게)
     setPicking(fn) {
       picking = fn;
       body.classList.toggle('picking', Boolean(fn));
+      for (const r of rows.values()) if (r.star) return r.star;
+      return null;
     },
     // 예측 자리에서 고른 줄 표시
     markPicked(d) {

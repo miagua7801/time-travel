@@ -35,3 +35,6 @@ private/
 # 암호화 열쇠·임시 파일
 *.key
 .env
+
+# impeccable 점검 기록 (critique·live-server). 커밋하지 않는다.
+.impeccable/

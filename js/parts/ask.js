@@ -237,21 +237,36 @@ export function pickAsk(id, { startPicking, stopPicking, textOf, onSave, onDone 
     none.hidden = true;
     picked.textContent = d === null ? line('btn.none') : textOf(d);
     if (d !== null) picked.lang = 'en';
+    // "없다"는 이유 칸 없이 바로 저장한다. 저장 뒤 흐름은 문장을 골랐을 때와 같다
+    if (d === null) {
+      t.text.focus({ preventScroll: true });
+      save('');
+      return;
+    }
     t.set('trip2.why');
     form.hidden = false;
     input.focus();
   }
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    if (stage !== 'why') return;
+  function save(why) {
     stage = 'done';
-    onSave(d, input.value.trim());
+    onSave(d, why);
     input.disabled = true;
     send.disabled = true;
     t.set('trip2.saved');
     later(HOLD, onDone);
+  }
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (stage !== 'why') return;
+    save(input.value.trim());
   });
-  startPicking(chosen);
+  // 고르기가 시작되면 발문에서 Tab 한 번으로 본문의 첫 ☆에 닿는다 (Shift+Tab과 다른 Tab은 그대로)
+  const firstStar = startPicking(chosen);
+  t.text.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || e.shiftKey || stage !== 'pick' || !firstStar) return;
+    e.preventDefault();
+    firstStar.focus();
+  });
 
   return {
     el: el('div', { className: 'ask ask-pick' }, t.box, lineBox, form),

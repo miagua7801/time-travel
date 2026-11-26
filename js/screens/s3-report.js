@@ -65,14 +65,10 @@ export function renderReport(root, { go, app }) {
     showMission();
   });
 
-  // 장면 5부터: 반·번호를 보고하고 장면 1~4를 마친 것으로 본 뒤 S8로
+  // 장면 5부터: 반·번호만 보고하고 S8로. 장면 1~4를 마친 것으로 보는 기록은 S8에서 암호를 맞힌 뒤에 남긴다
   const from5 = button('btn.from5', () => {
     if (!take()) return;
-    rec.flags.from5 = true;
-    rec.flags.s6 = true;
-    rec.done = Array.from(new Set([...rec.done, 1, 2, 3, 4])).sort();
-    saveRecord(rec);
-    go('s8');
+    go('s8', { from5: true });
   }, 'small');
 
   const body = el('div', { className: 'report-body' }, form, status);

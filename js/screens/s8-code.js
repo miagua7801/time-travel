@@ -13,7 +13,7 @@ async function codeHash(cls, code) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function renderCode(root, { go, app }) {
+export function renderCode(root, { go, app, opts = {} }) {
   const rec = app.rec;
   const ask = say('s8.ask', {}, 'h1');
   ask.id = 's8-ask';
@@ -42,6 +42,12 @@ export function renderCode(root, { go, app }) {
       return;
     }
     rec.flags.unlocked = true;
+    // S3 "장면 5부터"로 왔으면 이때 장면 1~4를 마친 것으로 본다 (길 지도로 돌아가면 아무것도 남기지 않는다)
+    if (opts.from5) {
+      rec.flags.from5 = true;
+      rec.flags.s6 = true;
+      rec.done = Array.from(new Set([...rec.done, 1, 2, 3, 4])).sort();
+    }
     saveRecord(rec);
     const open = say('s8.open');
     open.classList.add('code-ok');
