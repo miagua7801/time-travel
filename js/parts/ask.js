@@ -91,7 +91,8 @@ function moodRow(mood, onPick) {
 // 기록은 첫 시도만.
 //   makeRow(onPick)  선지 줄   answer  정답 번호   evidence  근거 줄 D 번호
 //   onFirst(pick, right)  첫 시도를 기록   onRight()  맞혔을 때   onEvidence(d)  근거 줄 밑줄   onDone()  다음으로
-function judgedAsk(id, className, makeRow, answer, evidence, { onFirst, onRight, onEvidence, onDone }) {
+//   onAnswer()  정답이 보일 때 (맞혔을 때와 둘째 오답 뒤 둘 다)
+function judgedAsk(id, className, makeRow, answer, evidence, { onFirst, onRight, onEvidence, onDone, onAnswer }) {
   const t = promptBox(`ask.${id}`);
   let tries = 0;
   let open = true;
@@ -120,6 +121,7 @@ function judgedAsk(id, className, makeRow, answer, evidence, { onFirst, onRight,
       row.mark(i, 'right');
       t.set('check.right');
       if (onRight) onRight();
+      if (onAnswer) onAnswer();
       later(HOLD, onDone);
     } else if (tries === 1) {
       row.mark(i, 'wrong');
@@ -132,6 +134,7 @@ function judgedAsk(id, className, makeRow, answer, evidence, { onFirst, onRight,
       row.mark(answer, 'right');
       t.set('check.wrong2');
       onEvidence(evidence);
+      if (onAnswer) onAnswer();
       goOn.hidden = false;
       goOn.focus();
     }

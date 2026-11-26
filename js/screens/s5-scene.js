@@ -364,6 +364,8 @@ function buildScene(n, { app, go, mode, again = false, backTo = 's4', jumps = nu
           saveRecord(rec);
         },
         onEvidence: (d) => reader.underline(d),
+        // 장면 6 확인 문제(첫 여행): 정답이 보이면 장면 그림을 진흙 속 나비 쪽으로 확대해 장면을 마칠 때까지 둔다
+        onAnswer: id === 'c6' && rec.trip !== 2 ? () => pic.classList.add('zoom-butterfly') : null,
         onDone,
       });
     } else if (id[0] === 'm') {
